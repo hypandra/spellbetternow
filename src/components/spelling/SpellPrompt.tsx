@@ -25,6 +25,8 @@ interface SpellPromptProps {
       advance?: boolean;
     }
   ) => Promise<void>;
+  audioUnlocked?: boolean;
+  onRequestUnlock?: () => void;
 }
 
 const CACHE_NAME = 'hypandra-tts-v1';
@@ -394,7 +396,7 @@ function TypedInputPanel({
   );
 }
 
-function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode) {
+function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode, audioUnlocked: boolean) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasPlayed, setHasPlayed] = useState(false);
@@ -531,8 +533,10 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode)
 
   useEffect(() => {
     resetAudio();
-    void playWordRef.current();
-  }, [promptId, resetAudio, word.id]);
+    if (audioUnlocked) {
+      void playWordRef.current();
+    }
+  }, [promptId, resetAudio, word.id, audioUnlocked]);
 
   useEffect(() => {
     return () => {
@@ -748,7 +752,7 @@ function useSpellPromptSubmission({
   };
 }
 
-export default function SpellPrompt({ word, wordIndex, prompt, onSubmit }: SpellPromptProps) {
+export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUnlocked = false, onRequestUnlock }: SpellPromptProps) {
   const { theme } = useSpellingTheme();
   const themeContent = THEME_CONTENT[theme];
   const listenPlaceholder = 'Type the spelling you heard';
@@ -769,7 +773,8 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit }: Spell
   const { playWord, stopAudio, isPlaying, hasPlayed, replayCount, startTime } = useSpellPromptAudio(
     word,
     promptId,
-    inputMode
+    inputMode,
+    audioUnlocked
   );
   const {
     userSpelling,
@@ -834,7 +839,10 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit }: Spell
         <div className="text-sm text-spelling-text-muted">Word {wordIndex + 1} of 5</div>
 
         <button
-          onClick={playWord}
+          onClick={() => {
+            onRequestUnlock?.();
+            playWord();
+          }}
           disabled={isPlaying}
           className="text-6xl p-8 bg-spelling-primary text-spelling-surface rounded-full hover:bg-spelling-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Play word"
@@ -847,6 +855,9 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit }: Spell
           {isPlaying ? 'Word is playing' : hasPlayed ? 'Ready to spell' : ''}
         </div>
 
+        {!audioUnlocked && !hasPlayed && (
+          <div className="text-sm text-spelling-text-muted" aria-hidden="true">Tap to hear the word</div>
+        )}
         {isPlaying && <div className="text-sm text-spelling-text-muted" aria-hidden="true">Playing...</div>}
 
         {(word.definition || word.example_sentence) && (

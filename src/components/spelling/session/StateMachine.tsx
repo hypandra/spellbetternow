@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import SessionStart from '@/components/spelling/SessionStart';
 import SpellPrompt from '@/components/spelling/SpellPrompt';
 import BreakScreen from '@/components/spelling/BreakScreen';
@@ -58,9 +59,18 @@ export default function StateMachine({
   onFinish,
   onNavigate,
 }: StateMachineProps) {
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+
   switch (state) {
     case 'START':
-      return <SessionStart kidId={kidId} onStart={onStart} wordIds={selectedWordIds} />;
+      return (
+        <SessionStart
+          kidId={kidId}
+          onStart={onStart}
+          wordIds={selectedWordIds}
+          onEnableSound={() => setAudioUnlocked(true)}
+        />
+      );
     case 'SPELLING':
       return (
         <SpellingErrorBoundary
@@ -79,6 +89,8 @@ export default function StateMachine({
               wordIndex={wordIndex}
               prompt={currentPrompt}
               onSubmit={onSubmit}
+              audioUnlocked={audioUnlocked}
+              onRequestUnlock={() => setAudioUnlocked(true)}
             />
           ) : null}
         </SpellingErrorBoundary>

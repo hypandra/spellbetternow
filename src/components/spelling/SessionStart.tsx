@@ -11,6 +11,7 @@ interface SessionStartProps {
   kidId: string;
   onStart: (wordIds?: string[]) => void;
   wordIds?: string[];
+  onEnableSound?: () => void;
 }
 
 type WordSelection = {
@@ -18,7 +19,7 @@ type WordSelection = {
   word: string;
 };
 
-export default function SessionStart({ kidId, onStart, wordIds }: SessionStartProps) {
+export default function SessionStart({ kidId, onStart, wordIds, onEnableSound }: SessionStartProps) {
   const { theme } = useSpellingTheme();
   const themeContent = THEME_CONTENT[theme];
   const [kid, setKid] = useState<Kid | null>(null);
@@ -161,6 +162,7 @@ export default function SessionStart({ kidId, onStart, wordIds }: SessionStartPr
         )}
         <button
           onClick={() => {
+            onEnableSound?.();
             if (selectedWords.length > 0) {
               onStart(selectedWords.map(word => word.id));
               return;
