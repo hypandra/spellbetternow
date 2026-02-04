@@ -396,26 +396,8 @@ function TypedInputPanel({
   );
 }
 
-// Unlock Web Audio on iOS - must be called from user gesture
-function unlockWebAudio(): void {
-  try {
-    const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
-    // Play a tiny silent buffer to unlock
-    const buffer = ctx.createBuffer(1, 1, 22050);
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(ctx.destination);
-    source.start(0);
-    // Resume if suspended (iOS starts suspended)
-    if (ctx.state === 'suspended') {
-      void ctx.resume();
-    }
-  } catch {
-    // Ignore errors - best effort unlock
-  }
-}
+// Tiny silent MP3 (1 sample) for iOS audio unlock
+const SILENT_MP3 = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRwmHAAAAAAD/+1DEAAAHAAGf9AAAIgAANIAAAARMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7UMQbAAADSAAAAAAAAANIAAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
 
 function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode, audioUnlocked: boolean) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -441,8 +423,7 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
   const resetAudio = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = '';
-      audioRef.current = null;
+      // Don't nullify - keep the unlocked element for reuse on iOS
     }
     setHasPlayedState(false);
     setReplayCount(0);
@@ -454,8 +435,7 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
   const stopAudio = useCallback(() => {
     if (!audioRef.current) return;
     audioRef.current.pause();
-    audioRef.current.src = '';
-    audioRef.current = null;
+    // Don't nullify - keep the unlocked element for reuse on iOS
     setPlayingState(false);
   }, [setPlayingState]);
 
@@ -467,10 +447,24 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
   const playWord = useCallback(async () => {
     if (isPlayingRef.current) return;
 
-    // Unlock Web Audio on first play attempt (must happen synchronously in gesture)
+    // iOS audio unlock: create Audio element and play silent audio SYNCHRONOUSLY in gesture
+    // This "unlocks" the element for future async plays
+    let audio: HTMLAudioElement;
     if (!audioUnlockedRef.current) {
-      unlockWebAudio();
+      audio = new Audio(SILENT_MP3);
+      audio.volume = 0;
+      try {
+        await audio.play();
+      } catch {
+        // Silent audio failed, but continue anyway
+      }
+      audio.pause();
+      audio.volume = 1;
       audioUnlockedRef.current = true;
+      audioRef.current = audio;
+    } else {
+      audio = audioRef.current || new Audio();
+      audioRef.current = audio;
     }
 
     setIsLoading(true);
@@ -522,15 +516,7 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
 
       const url = URL.createObjectURL(blob);
 
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-        audioRef.current = null;
-      }
-
-      const audio = new Audio(url);
-      audioRef.current = audio;
-
+      // Reuse the unlocked audio element
       audio.onended = () => {
         URL.revokeObjectURL(url);
         setPlayingState(false);
@@ -538,10 +524,11 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
 
       audio.onerror = () => {
         URL.revokeObjectURL(url);
+        setIsLoading(false);
         setPlayingState(false);
       };
 
-      // Only set playing AFTER play() succeeds
+      audio.src = url;
       await audio.play();
       setIsLoading(false);
       setPlayingState(true);
