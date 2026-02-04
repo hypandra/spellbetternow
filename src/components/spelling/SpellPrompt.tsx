@@ -396,14 +396,37 @@ function TypedInputPanel({
   );
 }
 
+// Unlock Web Audio on iOS - must be called from user gesture
+function unlockWebAudio(): void {
+  try {
+    const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    // Play a tiny silent buffer to unlock
+    const buffer = ctx.createBuffer(1, 1, 22050);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+    // Resume if suspended (iOS starts suspended)
+    if (ctx.state === 'suspended') {
+      void ctx.resume();
+    }
+  } catch {
+    // Ignore errors - best effort unlock
+  }
+}
+
 function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode, audioUnlocked: boolean) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [hasPlayed, setHasPlayed] = useState(false);
   const [replayCount, setReplayCount] = useState(0);
   const [startTime, setStartTime] = useState(0);
   const isPlayingRef = useRef(false);
   const hasPlayedRef = useRef(false);
+  const audioUnlockedRef = useRef(false);
 
   const setPlayingState = useCallback((value: boolean) => {
     isPlayingRef.current = value;
@@ -425,6 +448,7 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
     setReplayCount(0);
     setStartTime(0);
     setPlayingState(false);
+    setIsLoading(false);
   }, [setHasPlayedState, setPlayingState]);
 
   const stopAudio = useCallback(() => {
@@ -443,7 +467,13 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
   const playWord = useCallback(async () => {
     if (isPlayingRef.current) return;
 
-    setPlayingState(true);
+    // Unlock Web Audio on first play attempt (must happen synchronously in gesture)
+    if (!audioUnlockedRef.current) {
+      unlockWebAudio();
+      audioUnlockedRef.current = true;
+    }
+
+    setIsLoading(true);
 
     try {
       const voice = 'alloy';
@@ -511,7 +541,10 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
         setPlayingState(false);
       };
 
+      // Only set playing AFTER play() succeeds
       await audio.play();
+      setIsLoading(false);
+      setPlayingState(true);
 
       if (!hasPlayedRef.current) {
         setStartTime(Date.now());
@@ -521,6 +554,7 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
       }
     } catch (error) {
       console.error('Error playing word:', error);
+      setIsLoading(false);
       setPlayingState(false);
     }
   }, [announcement, setHasPlayedState, setPlayingState, word]);
@@ -547,7 +581,7 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
     };
   }, []);
 
-  return { playWord, stopAudio, isPlaying, hasPlayed, replayCount, startTime };
+  return { playWord, stopAudio, isPlaying, isLoading, hasPlayed, replayCount, startTime };
 }
 
 function useSpellPromptSubmission({
@@ -770,7 +804,7 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
     return maskWordInSentence(word.example_sentence, word.word, placeholderLength);
   }, [word.example_sentence, word.word]);
 
-  const { playWord, stopAudio, isPlaying, hasPlayed, replayCount, startTime } = useSpellPromptAudio(
+  const { playWord, stopAudio, isPlaying, isLoading, hasPlayed, replayCount, startTime } = useSpellPromptAudio(
     word,
     promptId,
     inputMode,
@@ -843,7 +877,7 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
             onRequestUnlock?.();
             playWord();
           }}
-          disabled={isPlaying}
+          disabled={isPlaying || isLoading}
           className="text-6xl p-8 bg-spelling-primary text-spelling-surface rounded-full hover:bg-spelling-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Play word"
           ref={playButtonRef}
@@ -852,12 +886,13 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
         </button>
 
         <div aria-live="polite" aria-atomic="true" className="sr-only">
-          {isPlaying ? 'Word is playing' : hasPlayed ? 'Ready to spell' : ''}
+          {isLoading ? 'Loading audio' : isPlaying ? 'Word is playing' : hasPlayed ? 'Ready to spell' : ''}
         </div>
 
-        {!audioUnlocked && !hasPlayed && (
+        {!hasPlayed && !isLoading && !isPlaying && (
           <div className="text-sm text-spelling-text-muted" aria-hidden="true">Tap to hear the word</div>
         )}
+        {isLoading && <div className="text-sm text-spelling-text-muted" aria-hidden="true">Loading...</div>}
         {isPlaying && <div className="text-sm text-spelling-text-muted" aria-hidden="true">Playing...</div>}
 
         {(word.definition || word.example_sentence) && (
