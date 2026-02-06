@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 
 const ROWS = [
   ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
@@ -23,29 +23,23 @@ export default function MobileKeyboard({
   submitDisabled = false,
   submitLabel = 'Check',
 }: MobileKeyboardProps) {
-  const handleKey = useCallback(
-    (letter: string) => (e: React.MouseEvent | React.TouchEvent) => {
-      e.preventDefault();
-      onKey(letter);
-    },
-    [onKey]
-  );
+  // Track whether a touch event fired so we can skip the subsequent mouse event.
+  // On touch devices, browsers fire touchstart → mousedown → click for the same tap.
+  const touchedRef = useRef(false);
 
-  const handleBackspace = useCallback(
-    (e: React.MouseEvent | React.TouchEvent) => {
-      e.preventDefault();
-      onBackspace();
-    },
-    [onBackspace]
-  );
-
-  const handleSubmit = useCallback(
-    (e: React.MouseEvent | React.TouchEvent) => {
-      e.preventDefault();
-      onSubmit();
-    },
-    [onSubmit]
-  );
+  const guard = useCallback((fn: () => void) => (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    if (e.type === 'touchstart') {
+      touchedRef.current = true;
+      fn();
+    } else {
+      // mousedown — only fire if no touch preceded it
+      if (!touchedRef.current) {
+        fn();
+      }
+      touchedRef.current = false;
+    }
+  }, []);
 
   return (
     <div
@@ -58,21 +52,20 @@ export default function MobileKeyboard({
           {rowIndex === 2 && (
             <button
               type="button"
-              onMouseDown={handleSubmit}
-              onTouchStart={handleSubmit}
-              disabled={submitDisabled}
-              className="flex items-center justify-center h-12 px-2 min-w-[48px] rounded-md bg-spelling-primary text-spelling-surface text-xs font-semibold active:opacity-80 disabled:opacity-40"
-              aria-label="Submit"
+              onMouseDown={guard(onBackspace)}
+              onTouchStart={guard(onBackspace)}
+              className="flex items-center justify-center h-12 px-2 min-w-[48px] rounded-md bg-spelling-secondary text-spelling-text text-sm font-semibold active:bg-spelling-tertiary"
+              aria-label="Backspace"
             >
-              {submitLabel}
+              &#9003;
             </button>
           )}
           {row.map((letter) => (
             <button
               key={letter}
               type="button"
-              onMouseDown={handleKey(letter)}
-              onTouchStart={handleKey(letter)}
+              onMouseDown={guard(() => onKey(letter))}
+              onTouchStart={guard(() => onKey(letter))}
               className="flex items-center justify-center h-12 min-w-[30px] flex-1 max-w-[36px] rounded-md bg-spelling-secondary text-spelling-text text-lg font-medium active:bg-spelling-tertiary"
               aria-label={letter.toUpperCase()}
             >
@@ -82,12 +75,13 @@ export default function MobileKeyboard({
           {rowIndex === 2 && (
             <button
               type="button"
-              onMouseDown={handleBackspace}
-              onTouchStart={handleBackspace}
-              className="flex items-center justify-center h-12 px-2 min-w-[48px] rounded-md bg-spelling-secondary text-spelling-text text-sm font-semibold active:bg-spelling-tertiary"
-              aria-label="Backspace"
+              onMouseDown={guard(onSubmit)}
+              onTouchStart={guard(onSubmit)}
+              disabled={submitDisabled}
+              className="flex items-center justify-center h-12 px-2 min-w-[48px] rounded-md bg-spelling-primary text-spelling-surface text-xs font-semibold active:opacity-80 disabled:opacity-40"
+              aria-label="Submit"
             >
-              &#9003;
+              {submitLabel}
             </button>
           )}
         </div>

@@ -233,3 +233,7 @@
   outline: 2px solid hsl(var(--spelling-primary));
   outline-offset: 2px;
 }
+
+body.mobile-keyboard-active curiosity-badge {
+  display: none !important;
+}

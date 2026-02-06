@@ -837,6 +837,14 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
   const playButtonRef = useRef<HTMLButtonElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const isTouchDevice = useTouchDevice();
+  const showMobileKeyboard = isTouchDevice && (prompt?.input_mode ?? 'typed') === 'typed';
+
+  useEffect(() => {
+    if (showMobileKeyboard) {
+      document.body.classList.add('mobile-keyboard-active');
+      return () => document.body.classList.remove('mobile-keyboard-active');
+    }
+  }, [showMobileKeyboard]);
 
   const inputMode: InputMode = prompt?.input_mode ?? 'typed';
   const targetLength = prompt?.target_length ?? word.word.length;
