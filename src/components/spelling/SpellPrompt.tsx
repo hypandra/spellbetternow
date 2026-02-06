@@ -9,6 +9,19 @@ import { THEME_CONTENT } from '@/features/spelling/constants/theme-content';
 import { computeSpellingDiff, type SpellingDiffResult } from '@/lib/spelling/errors/spelling-diff';
 import { maskWordInSentence, randomizePlaceholderLength } from '@/lib/spelling/mask-sentence';
 import SpellingErrorDiff from './SpellingErrorDiff';
+import MobileKeyboard from './MobileKeyboard';
+
+function useTouchDevice() {
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(pointer: coarse)');
+    setIsTouch(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsTouch(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return isTouch;
+}
 
 interface SpellPromptProps {
   word: Word;
@@ -168,6 +181,7 @@ interface TypedInputPanelProps {
   result: SpellPromptResult | null;
   themeContent: ThemeContent;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  isTouchDevice: boolean;
   onUserSpellingChange: (value: string) => void;
   onSubmit: () => void;
   onReplay: () => void;
@@ -341,10 +355,39 @@ function TypedInputPanel({
   result,
   themeContent,
   inputRef,
+  isTouchDevice,
   onUserSpellingChange,
   onSubmit,
   onReplay,
 }: TypedInputPanelProps) {
+  const submitDisabled =
+    !hasPlayed ||
+    !userSpelling.trim() ||
+    isSubmitting ||
+    (requiresCorrectSpelling && !isCorrectMatch);
+
+  const submitLabel = requiresCorrectSpelling ? 'Continue' : themeContent.buttons.submit;
+
+  const handleMobileKey = useCallback(
+    (letter: string) => {
+      onUserSpellingChange(userSpelling + letter);
+      // Keep focus on the input so the caret stays visible
+      inputRef?.current?.focus();
+    },
+    [onUserSpellingChange, userSpelling, inputRef]
+  );
+
+  const handleMobileBackspace = useCallback(() => {
+    onUserSpellingChange(userSpelling.slice(0, -1));
+    inputRef?.current?.focus();
+  }, [onUserSpellingChange, userSpelling, inputRef]);
+
+  const handleMobileSubmit = useCallback(() => {
+    if (!submitDisabled) {
+      onSubmit();
+    }
+  }, [onSubmit, submitDisabled]);
+
   return (
     <div className="space-y-4">
       <input
@@ -362,11 +405,26 @@ function TypedInputPanel({
         }}
         placeholder={listenPlaceholder}
         aria-label="Type the spelling you heard"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        inputMode={isTouchDevice ? 'none' : undefined}
         className="w-full px-4 py-3 text-xl border-2 border-spelling-border-input border-[style:var(--spelling-border-style)] rounded-lg disabled:bg-spelling-neutral disabled:cursor-not-allowed focus:outline-none focus:border-spelling-primary"
         autoFocus
       />
 
       <ResultBanner result={result} themeContent={themeContent} />
+
+      {isTouchDevice ? (
+        <MobileKeyboard
+          onKey={handleMobileKey}
+          onBackspace={handleMobileBackspace}
+          onSubmit={handleMobileSubmit}
+          submitDisabled={submitDisabled}
+          submitLabel={submitLabel}
+        />
+      ) : null}
 
       <div className="flex gap-4 justify-center">
         <button
@@ -376,22 +434,21 @@ function TypedInputPanel({
         >
           {themeContent.buttons.replay}
         </button>
-        <button
-          onClick={onSubmit}
-          disabled={
-            !hasPlayed ||
-            !userSpelling.trim() ||
-            isSubmitting ||
-            (requiresCorrectSpelling && !isCorrectMatch)
-          }
-          className="px-6 py-3 bg-spelling-primary text-spelling-surface rounded-lg hover:bg-spelling-primary-hover disabled:bg-spelling-tertiary disabled:cursor-not-allowed"
-        >
-          {requiresCorrectSpelling ? 'Continue' : themeContent.buttons.submit}
-        </button>
+        {!isTouchDevice && (
+          <button
+            onClick={onSubmit}
+            disabled={submitDisabled}
+            className="px-6 py-3 bg-spelling-primary text-spelling-surface rounded-lg hover:bg-spelling-primary-hover disabled:bg-spelling-tertiary disabled:cursor-not-allowed"
+          >
+            {submitLabel}
+          </button>
+        )}
       </div>
-      <div className="text-xs text-center text-spelling-text-muted">
-        Press Space to listen again • Press Enter to {requiresCorrectSpelling ? 'continue' : 'check spelling'}
-      </div>
+      {!isTouchDevice && (
+        <div className="text-xs text-center text-spelling-text-muted">
+          Press Space to listen again • Press Enter to {requiresCorrectSpelling ? 'continue' : 'check spelling'}
+        </div>
+      )}
     </div>
   );
 }
@@ -779,6 +836,7 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
   const listenPlaceholder = 'Type the spelling you heard';
   const playButtonRef = useRef<HTMLButtonElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const isTouchDevice = useTouchDevice();
 
   const inputMode: InputMode = prompt?.input_mode ?? 'typed';
   const targetLength = prompt?.target_length ?? word.word.length;
@@ -932,6 +990,7 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
             result={result}
             themeContent={themeContent}
             inputRef={inputRef}
+            isTouchDevice={isTouchDevice}
             onUserSpellingChange={setUserSpelling}
             onSubmit={handleSubmit}
             onReplay={playWord}
