@@ -857,6 +857,11 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
     const placeholderLength = randomizePlaceholderLength(word.word.length);
     return maskWordInSentence(word.example_sentence, word.word, placeholderLength);
   }, [word.example_sentence, word.word]);
+  const maskedDefinition = useMemo(() => {
+    if (!word.definition) return '';
+    const placeholderLength = randomizePlaceholderLength(word.word.length);
+    return maskWordInSentence(word.definition, word.word, placeholderLength);
+  }, [word.definition, word.word]);
 
   const { playWord, stopAudio, isPlaying, isLoading, hasPlayed, replayCount, startTime } = useSpellPromptAudio(
     word,
@@ -953,7 +958,7 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
           <div className="space-y-2">
             <p className="text-sm font-semibold text-spelling-text">Listen and spell</p>
             {word.definition && (
-              <p className="text-sm text-spelling-text-muted">{word.definition}</p>
+              <p className="text-sm text-spelling-text-muted">{maskedDefinition}</p>
             )}
             {word.example_sentence && (
               <p className="text-sm text-spelling-text-muted italic whitespace-pre-wrap">
