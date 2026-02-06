@@ -421,33 +421,34 @@ function TypedInputPanel({
           onKey={handleMobileKey}
           onBackspace={handleMobileBackspace}
           onSubmit={handleMobileSubmit}
+          onReplay={onReplay}
           submitDisabled={submitDisabled}
+          replayDisabled={isPlaying}
           submitLabel={submitLabel}
+          replayLabel={themeContent.buttons.replay}
         />
-      ) : null}
-
-      <div className="flex gap-4 justify-center">
-        <button
-          onClick={onReplay}
-          disabled={isPlaying}
-          className="px-6 py-3 bg-spelling-accent text-spelling-text rounded-lg hover:bg-spelling-tertiary disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {themeContent.buttons.replay}
-        </button>
-        {!isTouchDevice && (
-          <button
-            onClick={onSubmit}
-            disabled={submitDisabled}
-            className="px-6 py-3 bg-spelling-primary text-spelling-surface rounded-lg hover:bg-spelling-primary-hover disabled:bg-spelling-tertiary disabled:cursor-not-allowed"
-          >
-            {submitLabel}
-          </button>
-        )}
-      </div>
-      {!isTouchDevice && (
-        <div className="text-xs text-center text-spelling-text-muted">
-          Press Space to listen again • Press Enter to {requiresCorrectSpelling ? 'continue' : 'check spelling'}
-        </div>
+      ) : (
+        <>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={onReplay}
+              disabled={isPlaying}
+              className="px-6 py-3 bg-spelling-accent text-spelling-text rounded-lg hover:bg-spelling-tertiary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {themeContent.buttons.replay}
+            </button>
+            <button
+              onClick={onSubmit}
+              disabled={submitDisabled}
+              className="px-6 py-3 bg-spelling-primary text-spelling-surface rounded-lg hover:bg-spelling-primary-hover disabled:bg-spelling-tertiary disabled:cursor-not-allowed"
+            >
+              {submitLabel}
+            </button>
+          </div>
+          <div className="text-xs text-center text-spelling-text-muted">
+            Press Space to listen again • Press Enter to {requiresCorrectSpelling ? 'continue' : 'check spelling'}
+          </div>
+        </>
       )}
     </div>
   );
