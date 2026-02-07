@@ -17,10 +17,15 @@ export interface SpellingPromptData {
   letter_tray?: string[];
 }
 
+export interface MissedWordData {
+  word: string;
+  userSpelling: string;
+}
+
 export interface BreakData {
   breakSummary: {
     correct: string[];
-    missed: string[];
+    missed: MissedWordData[];
   };
   lesson: {
     pattern: string;

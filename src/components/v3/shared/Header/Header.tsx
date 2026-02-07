@@ -10,7 +10,7 @@ export function Header() {
   return (
     <header className="border-b border-[#1F3B2E] bg-[#2D5341] text-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="group flex flex-col sm:flex-row sm:items-center sm:gap-3">
+        <Link href="/landing" className="group flex flex-col sm:flex-row sm:items-center sm:gap-3">
           <span className="text-xl font-medium text-white tracking-tight">
             Spell Better Now
           </span>
@@ -24,6 +24,12 @@ export function Header() {
             <span className="text-sm text-white/70">...</span>
           ) : session?.user ? (
             <>
+              <Link
+                href="/app"
+                className="text-sm px-3 py-1.5 text-white/80 hover:text-white transition-colors"
+              >
+                Dashboard
+              </Link>
               <button
                 type="button"
                 onClick={() => signOut()}

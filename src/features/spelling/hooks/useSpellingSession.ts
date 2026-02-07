@@ -10,6 +10,13 @@ import type {
 
 type SessionErrorKind = 'missing-kid' | 'db-unavailable' | 'session-start-failed';
 
+export interface FinishStats {
+  attemptsTotal: number;
+  correctTotal: number;
+  miniSetsCompleted: number;
+  levelEnd: number;
+}
+
 interface UseSpellingSessionResult {
   state: SessionState;
   sessionId: string | null;
@@ -18,6 +25,7 @@ interface UseSpellingSessionResult {
   wordIndex: number;
   level: number;
   breakData: BreakData | null;
+  finishStats: FinishStats | null;
   assessmentSuggestedLevel: number | null;
   assessmentMaxLevel: number | null;
   loading: boolean;
@@ -52,6 +60,7 @@ export function useSpellingSession(
   const [wordIndex, setWordIndex] = useState(0);
   const [level, setLevel] = useState(3);
   const [breakData, setBreakData] = useState<BreakData | null>(null);
+  const [finishStats, setFinishStats] = useState<FinishStats | null>(null);
   const [assessmentSuggestedLevel, setAssessmentSuggestedLevel] = useState<number | null>(null);
   const [assessmentMaxLevel, setAssessmentMaxLevel] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,6 +126,7 @@ export function useSpellingSession(
         return;
       }
 
+      setFinishStats(null);
       setAssessmentSuggestedLevel(null);
       setAssessmentMaxLevel(null);
       setSessionId(data.sessionId ?? null);
@@ -227,6 +237,12 @@ export function useSpellingSession(
 
     try {
       const data = await SpellingSessionClient.finish(sessionId);
+      setFinishStats({
+        attemptsTotal: data.attemptsTotal ?? 0,
+        correctTotal: data.correctTotal ?? 0,
+        miniSetsCompleted: data.miniSetsCompleted ?? 0,
+        levelEnd: data.levelEnd ?? level,
+      });
       setAssessmentSuggestedLevel(data.assessmentSuggestedLevel ?? null);
       setAssessmentMaxLevel(data.assessmentMaxLevel ?? null);
       setState('COMPLETE');
@@ -263,6 +279,7 @@ export function useSpellingSession(
     wordIndex,
     level,
     breakData,
+    finishStats,
     assessmentSuggestedLevel,
     assessmentMaxLevel,
     loading,

@@ -1,11 +1,15 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useSpellingTheme } from '@/features/spelling/contexts/SpellingThemeContext';
 import { THEME_CONTENT } from '@/features/spelling/constants/theme-content';
+import SpellingErrorDiff from '@/components/spelling/SpellingErrorDiff';
+import { computeSpellingDiff } from '@/lib/spelling/errors/spelling-diff';
+import type { MissedWordData } from '@/features/spelling/types/session';
 
 interface BreakScreenProps {
   breakData: {
-    breakSummary: { correct: string[]; missed: string[] };
+    breakSummary: { correct: string[]; missed: MissedWordData[] };
     lesson: { pattern: string; explanation: string; contrast: string; question: string; answer: string } | null;
   } | null;
   onContinue: () => void;
@@ -51,10 +55,21 @@ export default function BreakScreen({
               {breakData.breakSummary.missed.length > 0 && (
                 <section aria-labelledby="review-words-heading">
                   <h3 id="review-words-heading" className="font-medium mb-2 text-spelling-text">To Review ({breakData.breakSummary.missed.length})</h3>
-                  <ul role="list" aria-label="Words to practice" className="list-none space-y-1">
-                    {breakData.breakSummary.missed.map((word, i) => (
-                      <li key={`missed-${i}-${word}`} className="text-spelling-text pl-4">{word}</li>
-                    ))}
+                  <ul role="list" aria-label="Words to practice" className="list-none space-y-3">
+                    {breakData.breakSummary.missed.map((missed, i) => {
+                      const diff = computeSpellingDiff(missed.word, missed.userSpelling);
+                      return (
+                        <li key={`missed-${i}-${missed.word}`} className="pl-4">
+                          <span className="text-spelling-text font-medium">{missed.word}</span>
+                          <SpellingErrorDiff
+                            ops={diff.ops}
+                            summary={diff.summary}
+                            correctSpelling={missed.word}
+                            userSpelling={missed.userSpelling}
+                          />
+                        </li>
+                      );
+                    })}
                   </ul>
                 </section>
               )}

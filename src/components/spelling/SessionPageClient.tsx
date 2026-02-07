@@ -14,10 +14,12 @@ function SessionPageContent() {
   const { kidId, wordIds, autoStart, assessment } = useSessionParams();
   const {
     state,
+    sessionId,
     currentWord,
     currentPrompt,
     wordIndex,
     breakData,
+    finishStats,
     assessmentSuggestedLevel,
     assessmentMaxLevel,
     loading,
@@ -80,11 +82,13 @@ function SessionPageContent() {
     <StateMachine
       state={state}
       kidId={kidId}
+      sessionId={sessionId}
       selectedWordIds={wordIds}
       currentWord={currentWord}
       currentPrompt={currentPrompt}
       wordIndex={wordIndex}
       breakData={breakData}
+      finishStats={finishStats}
       assessmentSuggestedLevel={assessmentSuggestedLevel}
       assessmentMaxLevel={assessmentMaxLevel}
       onApplyAssessmentLevel={handleApplyAssessmentLevel}

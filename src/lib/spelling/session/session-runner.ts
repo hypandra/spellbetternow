@@ -190,7 +190,7 @@ export class SessionRunner {
     nextWord?: Word | null;
     breakSummary?: {
       correct: string[];
-      missed: string[];
+      missed: Array<{ word: string; userSpelling: string }>;
     };
     lesson?: {
       pattern: string;
@@ -292,7 +292,7 @@ export class SessionRunner {
       this.state.state = this.stateMachine.state;
 
       const correctWords: string[] = [];
-      const missedWords: string[] = [];
+      const missedWords: Array<{ word: string; userSpelling: string }> = [];
 
       for (const result of this.state.miniSetResults) {
         const w = await getWord(result.wordId);
@@ -300,12 +300,16 @@ export class SessionRunner {
           if (result.correct) {
             correctWords.push(w.word);
           } else {
-            missedWords.push(w.word);
+            const attempt = [...this.state.attempts].reverse().find(a => a.word_id === result.wordId);
+            missedWords.push({
+              word: w.word,
+              userSpelling: attempt?.user_spelling ?? '',
+            });
           }
         }
       }
 
-      const lesson = await this.generateLesson(missedWords);
+      const lesson = await this.generateLesson(missedWords.map(m => m.word));
 
       return {
         correct,
@@ -339,7 +343,7 @@ export class SessionRunner {
   async completeMiniSet(action: 'CONTINUE' | 'CHALLENGE_JUMP' | 'PRACTICE_MISSED'): Promise<{
     breakSummary: {
       correct: string[];
-      missed: string[];
+      missed: Array<{ word: string; userSpelling: string }>;
     };
     lesson: {
       pattern: string;
@@ -388,20 +392,24 @@ export class SessionRunner {
     }
 
     const correctWords: string[] = [];
-    const missedWords: string[] = [];
+    const missedWords: Array<{ word: string; userSpelling: string }> = [];
 
     for (const result of this.state.miniSetResults) {
-      const word = await getWord(result.wordId);
-      if (word) {
+      const w = await getWord(result.wordId);
+      if (w) {
         if (result.correct) {
-          correctWords.push(word.word);
+          correctWords.push(w.word);
         } else {
-          missedWords.push(word.word);
+          const attempt = [...this.state.attempts].reverse().find(a => a.word_id === result.wordId);
+          missedWords.push({
+            word: w.word,
+            userSpelling: attempt?.user_spelling ?? '',
+          });
         }
       }
     }
 
-    const lesson = await this.generateLesson(missedWords);
+    const lesson = await this.generateLesson(missedWords.map(m => m.word));
 
     await createMiniSetSummary(this.state.sessionId, {
       index: Math.floor((this.state.attempts.length - 1) / 5),

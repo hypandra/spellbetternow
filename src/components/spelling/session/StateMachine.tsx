@@ -8,6 +8,7 @@ import SessionComplete from '@/components/spelling/SessionComplete';
 import { SpellingErrorBoundary } from '@/components/spelling/SpellingErrorBoundary';
 import { SpellPromptErrorFallback } from '@/components/spelling/SpellPromptErrorFallback';
 import type { Word } from '@/lib/spelling/db/words';
+import type { FinishStats } from '@/features/spelling/hooks/useSpellingSession';
 import type {
   BreakData,
   InputMode,
@@ -18,11 +19,13 @@ import type {
 interface StateMachineProps {
   state: SessionState;
   kidId: string;
+  sessionId: string | null;
   selectedWordIds?: string[];
   currentWord: Word | null;
   currentPrompt: SpellingPromptData | null;
   wordIndex: number;
   breakData: BreakData | null;
+  finishStats: FinishStats | null;
   assessmentSuggestedLevel: number | null;
   assessmentMaxLevel: number | null;
   onApplyAssessmentLevel: (level: number) => Promise<void>;
@@ -45,11 +48,13 @@ interface StateMachineProps {
 export default function StateMachine({
   state,
   kidId,
+  sessionId,
   selectedWordIds,
   currentWord,
   currentPrompt,
   wordIndex,
   breakData,
+  finishStats,
   assessmentSuggestedLevel,
   assessmentMaxLevel,
   onApplyAssessmentLevel,
@@ -110,6 +115,8 @@ export default function StateMachine({
       return (
         <SessionComplete
           kidId={kidId}
+          sessionId={sessionId}
+          finishStats={finishStats}
           assessmentSuggestedLevel={assessmentSuggestedLevel}
           assessmentMaxLevel={assessmentMaxLevel}
           onApplyAssessmentLevel={onApplyAssessmentLevel}

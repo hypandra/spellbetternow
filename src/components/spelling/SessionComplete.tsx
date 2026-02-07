@@ -5,9 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useSpellingTheme } from '@/features/spelling/contexts/SpellingThemeContext';
 import { THEME_CONTENT } from '@/features/spelling/constants/theme-content';
 import { levelToPercentileMidpoint } from '@/lib/spelling/elo';
+import ResultsCard from '@/components/spelling/ResultsCard';
+import ShareButton from '@/components/spelling/ShareButton';
+import type { FinishStats } from '@/features/spelling/hooks/useSpellingSession';
 
 interface SessionCompleteProps {
   kidId: string;
+  sessionId: string | null;
+  finishStats: FinishStats | null;
   assessmentSuggestedLevel: number | null;
   assessmentMaxLevel: number | null;
   onApplyAssessmentLevel: (level: number) => Promise<void>;
@@ -15,6 +20,8 @@ interface SessionCompleteProps {
 
 export default function SessionComplete({
   kidId,
+  sessionId,
+  finishStats,
   assessmentSuggestedLevel,
   assessmentMaxLevel,
   onApplyAssessmentLevel,
@@ -41,13 +48,22 @@ export default function SessionComplete({
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="text-center space-y-6">
-        <h2 className="text-3xl font-bold text-spelling-text">Session Complete</h2>
-        <div className="space-y-2">
-          <p className="text-sm text-spelling-text-muted">
+      <div className="space-y-6">
+        <h2 className="text-3xl font-bold text-spelling-text text-center">Session Complete</h2>
+
+        {finishStats ? (
+          <ResultsCard kidId={kidId} finishStats={finishStats} />
+        ) : (
+          <p className="text-sm text-spelling-text-muted text-center">
             Practice again tomorrow.
           </p>
-        </div>
+        )}
+
+        {sessionId && (
+          <div className="flex justify-center">
+            <ShareButton sessionId={sessionId} />
+          </div>
+        )}
 
         {hasSuggestion && (
           <div className="rounded-lg border bg-spelling-surface-muted p-5 text-left space-y-3">

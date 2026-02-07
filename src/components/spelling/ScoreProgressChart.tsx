@@ -42,7 +42,7 @@ function TooltipContent({ active, payload }: any) {
   return (
     <div className="border border-spelling-border bg-spelling-surface p-3 shadow-lg text-xs space-y-1">
       <div className="font-semibold text-spelling-text">Attempt #{attempt.attemptNumber}</div>
-      <div>Word: "{attempt.word}"</div>
+      {attempt.word ? <div>Word: &quot;{attempt.word}&quot;</div> : null}
       <div>Result: {attempt.correct ? '✓ Correct' : '✗ Incorrect'}</div>
       <div>
         Score: {beforePct} → {afterPct} ({formatDelta(beforePct, afterPct)})
