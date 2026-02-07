@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 import { type NextRequest } from 'next/server';
 import {
   getPublicSessionStats,
-  getPublicKidAttemptHistory,
+  getPublicSessionAttempts,
 } from '@/lib/spelling/db/public-session';
 import {
   levelToPercentileMidpoint,
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       return new Response('Session not found', { status: 404 });
     }
 
-    const attemptRows = await getPublicKidAttemptHistory(stats.kidId);
+    const attemptRows = await getPublicSessionAttempts(sessionId);
 
     const winRate =
       stats.attemptsTotal > 0

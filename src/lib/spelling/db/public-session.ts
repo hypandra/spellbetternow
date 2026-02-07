@@ -61,6 +61,20 @@ export async function getPublicKidAttemptHistory(
   return data as PublicAttemptRow[];
 }
 
+export async function getPublicSessionAttempts(
+  sessionId: string
+): Promise<PublicAttemptRow[]> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('spelling_attempts')
+    .select('correct, created_at, user_elo_before, user_elo_after')
+    .eq('session_id', sessionId)
+    .order('created_at', { ascending: true });
+
+  if (error || !data) return [];
+  return data as PublicAttemptRow[];
+}
+
 export async function getWordBankCount(): Promise<number> {
   const supabase = getSupabaseClient();
   const { count, error } = await supabase

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import {
   getPublicSessionStats,
-  getPublicKidAttemptHistory,
+  getPublicSessionAttempts,
   getWordBankCount,
 } from '@/lib/spelling/db/public-session';
 import { DEFAULT_ELO } from '@/lib/spelling/elo';
@@ -54,7 +54,7 @@ export default async function SharePage({ params }: SharePageProps) {
   }
 
   const [attemptRows, totalWords] = await Promise.all([
-    getPublicKidAttemptHistory(stats.kidId),
+    getPublicSessionAttempts(sessionId),
     getWordBankCount(),
   ]);
 
