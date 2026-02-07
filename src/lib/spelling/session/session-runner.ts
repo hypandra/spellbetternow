@@ -385,7 +385,7 @@ export class SessionRunner {
       nextWords = missedWords.filter((word): word is Word => Boolean(word));
     } else if (action === 'CHALLENGE_JUMP') {
       nextWords = await selectChallengeJumpWords(
-        this.state.currentElo + 150,
+        this.state.currentElo,
         excludeWordIds,
         this.state.kidId
       );

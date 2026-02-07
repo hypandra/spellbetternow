@@ -9,6 +9,7 @@ import type {
 } from '@/features/spelling/types/session';
 
 type SessionErrorKind = 'missing-kid' | 'db-unavailable' | 'session-start-failed';
+type BreakMessage = string | null;
 
 export interface FinishStats {
   attemptsTotal: number;
@@ -25,6 +26,7 @@ interface UseSpellingSessionResult {
   wordIndex: number;
   level: number;
   breakData: BreakData | null;
+  breakMessage: BreakMessage;
   finishStats: FinishStats | null;
   assessmentSuggestedLevel: number | null;
   assessmentMaxLevel: number | null;
@@ -60,6 +62,7 @@ export function useSpellingSession(
   const [wordIndex, setWordIndex] = useState(0);
   const [level, setLevel] = useState(3);
   const [breakData, setBreakData] = useState<BreakData | null>(null);
+  const [breakMessage, setBreakMessage] = useState<BreakMessage>(null);
   const [finishStats, setFinishStats] = useState<FinishStats | null>(null);
   const [assessmentSuggestedLevel, setAssessmentSuggestedLevel] = useState<number | null>(null);
   const [assessmentMaxLevel, setAssessmentMaxLevel] = useState<number | null>(null);
@@ -211,13 +214,14 @@ export function useSpellingSession(
 
       if (data.error && action !== 'CONTINUE') {
         if (action === 'CHALLENGE_JUMP') {
-          alert('Nice try! Back to your level.');
+          setBreakMessage("You've reached the highest level available. Keep practicing to build mastery.");
         } else {
-          alert('No missed words to practice right now.');
+          setBreakMessage('No missed words to practice right now.');
         }
         return;
       }
 
+      setBreakMessage(null);
       setBreakData({
         breakSummary: data.breakSummary || { correct: [], missed: [] },
         lesson: data.lesson || null,
@@ -279,6 +283,7 @@ export function useSpellingSession(
     wordIndex,
     level,
     breakData,
+    breakMessage,
     finishStats,
     assessmentSuggestedLevel,
     assessmentMaxLevel,

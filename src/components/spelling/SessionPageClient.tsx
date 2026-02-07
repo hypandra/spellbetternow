@@ -19,6 +19,7 @@ function SessionPageContent() {
     currentPrompt,
     wordIndex,
     breakData,
+    breakMessage,
     finishStats,
     assessmentSuggestedLevel,
     assessmentMaxLevel,
@@ -88,6 +89,7 @@ function SessionPageContent() {
       currentPrompt={currentPrompt}
       wordIndex={wordIndex}
       breakData={breakData}
+      breakMessage={breakMessage}
       finishStats={finishStats}
       assessmentSuggestedLevel={assessmentSuggestedLevel}
       assessmentMaxLevel={assessmentMaxLevel}

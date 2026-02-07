@@ -8,11 +8,16 @@ const ROWS = [
   ['z', 'x', 'c', 'v', 'b', 'n', 'm'],
 ];
 
+// Pixels of horizontal drag to trigger one cursor step
+const DRAG_THRESHOLD_PX = 20;
+
 interface MobileKeyboardProps {
   onKey: (letter: string) => void;
   onBackspace: () => void;
   onSubmit: () => void;
   onReplay: () => void;
+  onLeft?: () => void;
+  onRight?: () => void;
   submitDisabled?: boolean;
   replayDisabled?: boolean;
   submitLabel?: string;
@@ -24,6 +29,8 @@ export default function MobileKeyboard({
   onBackspace,
   onSubmit,
   onReplay,
+  onLeft,
+  onRight,
   submitDisabled = false,
   replayDisabled = false,
   submitLabel = 'Check',
@@ -44,6 +51,42 @@ export default function MobileKeyboard({
       }
       touchedRef.current = false;
     }
+  }, []);
+
+  // Spacebar trackpad state
+  const trackpadStartX = useRef(0);
+  const trackpadAccumulated = useRef(0);
+  const trackpadActive = useRef(false);
+
+  const handleTrackpadTouchStart = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    trackpadStartX.current = touch.clientX;
+    trackpadAccumulated.current = 0;
+    trackpadActive.current = true;
+  }, []);
+
+  const handleTrackpadTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!trackpadActive.current) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const dx = touch.clientX - trackpadStartX.current;
+    const totalDelta = trackpadAccumulated.current + dx;
+
+    if (Math.abs(totalDelta) >= DRAG_THRESHOLD_PX) {
+      const steps = Math.trunc(totalDelta / DRAG_THRESHOLD_PX);
+      if (steps > 0) {
+        for (let i = 0; i < steps; i++) onRight?.();
+      } else {
+        for (let i = 0; i < -steps; i++) onLeft?.();
+      }
+      trackpadAccumulated.current = totalDelta - steps * DRAG_THRESHOLD_PX;
+      trackpadStartX.current = touch.clientX;
+    }
+  }, [onLeft, onRight]);
+
+  const handleTrackpadTouchEnd = useCallback(() => {
+    trackpadActive.current = false;
   }, []);
 
   return (
@@ -79,6 +122,22 @@ export default function MobileKeyboard({
           )}
         </div>
       ))}
+      {/* Spacebar trackpad: drag left/right to move cursor */}
+      {(onLeft || onRight) && (
+        <div className="flex justify-center gap-[3px] mb-[3px]">
+          <div
+            role="none"
+            aria-hidden="true"
+            onTouchStart={handleTrackpadTouchStart}
+            onTouchMove={handleTrackpadTouchMove}
+            onTouchEnd={handleTrackpadTouchEnd}
+            onTouchCancel={handleTrackpadTouchEnd}
+            className="flex items-center justify-center h-10 flex-1 rounded-md bg-spelling-secondary text-spelling-text-muted text-xs select-none cursor-grab active:cursor-grabbing active:bg-spelling-tertiary"
+          >
+            slide to move cursor
+          </div>
+        </div>
+      )}
       {/* Bottom row: replay + submit */}
       <div className="flex justify-center gap-[3px]">
         <button

@@ -370,17 +370,54 @@ function TypedInputPanel({
 
   const handleMobileKey = useCallback(
     (letter: string) => {
-      onUserSpellingChange(userSpelling + letter);
-      // Keep focus on the input so the caret stays visible
-      inputRef?.current?.focus();
+      const input = inputRef?.current;
+      const start = input?.selectionStart ?? userSpelling.length;
+      const end = input?.selectionEnd ?? start;
+      const next = userSpelling.slice(0, start) + letter + userSpelling.slice(end);
+      onUserSpellingChange(next);
+      // Restore cursor position after React re-render
+      requestAnimationFrame(() => {
+        input?.setSelectionRange(start + 1, start + 1);
+        input?.focus();
+      });
     },
     [onUserSpellingChange, userSpelling, inputRef]
   );
 
   const handleMobileBackspace = useCallback(() => {
-    onUserSpellingChange(userSpelling.slice(0, -1));
-    inputRef?.current?.focus();
+    const input = inputRef?.current;
+    const start = input?.selectionStart ?? userSpelling.length;
+    const end = input?.selectionEnd ?? start;
+    if (start === 0 && end === 0) return;
+    // If there's a selection, delete the selection; otherwise delete one char before cursor
+    const deleteFrom = start === end ? start - 1 : start;
+    const next = userSpelling.slice(0, deleteFrom) + userSpelling.slice(end);
+    onUserSpellingChange(next);
+    requestAnimationFrame(() => {
+      input?.setSelectionRange(deleteFrom, deleteFrom);
+      input?.focus();
+    });
   }, [onUserSpellingChange, userSpelling, inputRef]);
+
+  const handleMobileLeft = useCallback(() => {
+    const input = inputRef?.current;
+    if (!input) return;
+    const pos = input.selectionStart ?? 0;
+    if (pos > 0) {
+      input.setSelectionRange(pos - 1, pos - 1);
+    }
+    input.focus();
+  }, [inputRef]);
+
+  const handleMobileRight = useCallback(() => {
+    const input = inputRef?.current;
+    if (!input) return;
+    const pos = input.selectionStart ?? 0;
+    if (pos < userSpelling.length) {
+      input.setSelectionRange(pos + 1, pos + 1);
+    }
+    input.focus();
+  }, [inputRef, userSpelling.length]);
 
   const handleMobileSubmit = useCallback(() => {
     if (!submitDisabled) {
@@ -422,6 +459,8 @@ function TypedInputPanel({
           onBackspace={handleMobileBackspace}
           onSubmit={handleMobileSubmit}
           onReplay={onReplay}
+          onLeft={handleMobileLeft}
+          onRight={handleMobileRight}
           submitDisabled={submitDisabled}
           replayDisabled={isPlaying}
           submitLabel={submitLabel}

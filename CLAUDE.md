@@ -123,6 +123,16 @@ OPENAI_API_KEY
 OPENAI_TTS_MODEL          # Optional, defaults to 'tts-1'
 ```
 
+## Migrations (Temporary Workaround)
+
+`supabase db push` fails because this project's local migrations are a subset of the shared Supabase instance's full history. Until schema isolation lands, run migrations directly:
+
+```bash
+source .env.local && psql "$DATABASE_URL" -f supabase/migrations/<migration_file>.sql
+```
+
+This bypasses the migration history check. Remove this workaround once SBN moves to its own schema.
+
 ## Next.js 16 Params Pattern
 
 Dynamic route params are Promises in Next.js 16 - you must await them before use:

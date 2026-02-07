@@ -42,7 +42,7 @@ export const THEME_CONTENT: Record<SpellingTheme, ThemeContent> = {
       keepGoing: 'Continue Practicing',
       practiceMissed: 'Practice Words to Learn',
       harderSet: 'More Challenging Words',
-      finishSession: 'Finish Practice',
+      finishSession: 'End Practice',
       backToSpelling: 'Home',
       backToHome: 'Home',
       replay: 'Listen Again',
@@ -53,7 +53,7 @@ export const THEME_CONTENT: Record<SpellingTheme, ThemeContent> = {
       cancelAddKid: 'Cancel',
       createKid: 'Add',
       startSession: 'Begin',
-      viewProgress: 'Progress',
+      viewProgress: 'See Progress',
     },
   },
 };

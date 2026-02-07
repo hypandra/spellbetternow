@@ -1,0 +1,52 @@
+-- Add more words at levels 5-7 to increase variety and reduce repetition
+INSERT INTO spelling_word_bank (word, level, definition, example_sentence, current_elo) VALUES
+-- Level 5 words (~1700-1800 ELO)
+('algorithm', 5, 'A set of steps to solve a problem or complete a task', 'The algorithm sorted the numbers from smallest to largest.', 1750),
+('archaeology', 5, 'The study of human history through excavation of sites and artifacts', 'The archaeology dig uncovered pottery from ancient civilizations.', 1750),
+('camouflage', 5, 'Colors or patterns that help something blend in with its surroundings', 'The lizard used camouflage to hide among the leaves.', 1720),
+('catastrophe', 5, 'A sudden disaster or very bad event', 'The oil spill was an environmental catastrophe.', 1730),
+('chrysanthemum', 5, 'A garden plant with large, colorful flowers', 'The chrysanthemum bloomed in brilliant yellow and orange.', 1780),
+('conscientious', 5, 'Careful and thorough in doing what is right', 'She was a conscientious student who always completed her work.', 1760),
+('curriculum', 5, 'The subjects and content taught in a school or course', 'The curriculum included math, science, and history.', 1740),
+('entrepreneur', 5, 'A person who starts and runs their own business', 'The young entrepreneur opened a lemonade stand.', 1750),
+('fluorescent', 5, 'Giving off bright light, especially when exposed to ultraviolet rays', 'The fluorescent lights hummed in the classroom.', 1760),
+('hemorrhage', 5, 'Heavy or uncontrolled bleeding', 'The doctor worked quickly to stop the hemorrhage.', 1790),
+('hypothesis', 5, 'An educated guess that can be tested by experiment', 'Her hypothesis predicted that plants grow faster with music.', 1730),
+('itinerary', 5, 'A planned route or schedule for a journey', 'The travel itinerary included three cities in two weeks.', 1740),
+('kaleidoscope', 5, 'A tube with mirrors and colored glass that creates patterns', 'The kaleidoscope made beautiful patterns when she turned it.', 1750),
+('mischievous', 5, 'Causing or showing a fondness for playful trouble', 'The mischievous puppy chewed up the slippers.', 1720),
+
+-- Level 6 words (~1900-2000 ELO)
+('acquaintance', 6, 'A person you know slightly but who is not a close friend', 'She was an acquaintance from the neighborhood.', 1920),
+('bourgeoisie', 6, 'The middle class, especially those with conventional values', 'The novel explored the lives of the bourgeoisie in Victorian England.', 1980),
+('connoisseur', 6, 'An expert who appreciates fine food, art, or other things', 'The connoisseur could identify wines by taste alone.', 1950),
+('diphtheria', 6, 'A serious infectious disease affecting the throat and breathing', 'Vaccination programs nearly eliminated diphtheria.', 1960),
+('effervescent', 6, 'Fizzy and bubbly, or lively and enthusiastic', 'The effervescent drink tickled her nose.', 1930),
+('gubernatorial', 6, 'Relating to a state governor', 'The gubernatorial election drew many voters to the polls.', 1970),
+('idiosyncrasy', 6, 'A peculiar habit or characteristic unique to a person', 'His idiosyncrasy of always wearing mismatched socks amused his friends.', 1960),
+('juxtaposition', 6, 'Placing two things side by side to show contrast', 'The juxtaposition of old and new buildings created an interesting skyline.', 1940),
+('labyrinthine', 6, 'Extremely complex or winding, like a maze', 'The labyrinthine corridors of the old castle confused visitors.', 1950),
+('onomatopoeia', 6, 'A word that imitates the sound it describes', 'Words like buzz and splash are examples of onomatopoeia.', 1970),
+('pharmaceutical', 6, 'Relating to the preparation and sale of medicines', 'The pharmaceutical company developed a new vaccine.', 1920),
+('reconnaissance', 6, 'A survey or exploration of an area, especially for military purposes', 'The reconnaissance mission gathered information about the terrain.', 1960),
+('surreptitious', 6, 'Done secretly, without anyone noticing', 'She made a surreptitious glance at the answer sheet.', 1940),
+('thoroughfare', 6, 'A main road or public highway', 'The busy thoroughfare was lined with shops and restaurants.', 1910),
+('unequivocally', 6, 'In a way that leaves no doubt; clearly and completely', 'The evidence unequivocally proved the theory correct.', 1950),
+
+-- Level 7 words (~2100-2200 ELO)
+('antediluvian', 7, 'Extremely old-fashioned or outdated', 'His antediluvian views on technology amused his grandchildren.', 2120),
+('bougainvillea', 7, 'A tropical plant with bright, papery flowers', 'The bougainvillea draped over the garden wall in vivid purple.', 2150),
+('chiaroscuro', 7, 'The use of strong contrasts between light and dark in art', 'The painter mastered chiaroscuro to create dramatic portraits.', 2180),
+('eleemosynary', 7, 'Relating to or dependent on charity', 'The eleemosynary institution provided meals to those in need.', 2200),
+('floccinaucinihilipilification', 7, 'The action of estimating something as worthless', 'His floccinaucinihilipilification of the antique surprised the dealer.', 2200),
+('guerrilla', 7, 'A member of a small independent fighting force', 'The guerrilla fighters used the dense forest for cover.', 2100),
+('lieutenant', 7, 'A military officer ranking below a captain', 'The lieutenant led the patrol through the valley.', 2110),
+('milquetoast', 7, 'A timid or submissive person', 'He was no milquetoast — he stood up firmly for his beliefs.', 2140),
+('onychophagia', 7, 'The habit of biting ones fingernails', 'The doctor explained that onychophagia is a common nervous habit.', 2180),
+('phthalate', 7, 'A chemical compound used in making plastics flexible', 'The report examined phthalate levels in household products.', 2190),
+('quinquennial', 7, 'Occurring every five years', 'The quinquennial festival brought the whole town together.', 2160),
+('rhododendron', 7, 'A shrub or small tree with large clusters of flowers', 'The rhododendron bloomed with stunning pink flowers every spring.', 2130),
+('sphygmomanometer', 7, 'An instrument for measuring blood pressure', 'The nurse used a sphygmomanometer to check the patients blood pressure.', 2200),
+('tintinnabulation', 7, 'The ringing or sound of bells', 'The tintinnabulation from the church tower echoed across the village.', 2170),
+('unconscionable', 7, 'Not guided by conscience; unreasonably excessive', 'The unconscionable price of the medicine outraged the community.', 2120)
+ON CONFLICT (word) DO NOTHING;

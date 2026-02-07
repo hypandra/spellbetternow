@@ -25,6 +25,7 @@ interface StateMachineProps {
   currentPrompt: SpellingPromptData | null;
   wordIndex: number;
   breakData: BreakData | null;
+  breakMessage: string | null;
   finishStats: FinishStats | null;
   assessmentSuggestedLevel: number | null;
   assessmentMaxLevel: number | null;
@@ -54,6 +55,7 @@ export default function StateMachine({
   currentPrompt,
   wordIndex,
   breakData,
+  breakMessage,
   finishStats,
   assessmentSuggestedLevel,
   assessmentMaxLevel,
@@ -104,6 +106,7 @@ export default function StateMachine({
       return (
         <BreakScreen
           breakData={breakData}
+          breakMessage={breakMessage}
           onContinue={() => onContinueMiniSet('CONTINUE')}
           onPracticeMissed={() => onContinueMiniSet('PRACTICE_MISSED')}
           onChallengeJump={() => onContinueMiniSet('CHALLENGE_JUMP')}
