@@ -1,9 +1,19 @@
 import { ImageResponse } from 'next/og';
 import { type NextRequest } from 'next/server';
-import { getPublicSessionStats } from '@/lib/spelling/db/public-session';
-import { levelToPercentileMidpoint } from '@/lib/spelling/elo';
+import {
+  getPublicSessionStats,
+  getPublicKidAttemptHistory,
+} from '@/lib/spelling/db/public-session';
+import {
+  levelToPercentileMidpoint,
+  eloToPercentileApprox,
+  DEFAULT_ELO,
+} from '@/lib/spelling/elo';
 
 export const runtime = 'nodejs';
+
+const CHART_HEIGHT = 160;
+const BAR_GAP = 2;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -20,15 +30,28 @@ export async function GET(request: NextRequest) {
       return new Response('Session not found', { status: 404 });
     }
 
+    const attemptRows = await getPublicKidAttemptHistory(stats.kidId);
+
     const winRate =
       stats.attemptsTotal > 0
         ? Math.round((stats.correctTotal / stats.attemptsTotal) * 100)
         : 0;
     const percentile = levelToPercentileMidpoint(stats.levelEnd);
-    const progressPct =
-      stats.attemptsTotal > 0
-        ? Math.round((stats.correctTotal / stats.attemptsTotal) * 100)
-        : 0;
+
+    // Build sparkline data — last 50 attempts max
+    const recentAttempts = attemptRows.slice(-50);
+    const chartPoints = recentAttempts.map((row) => {
+      const elo = row.user_elo_after ?? row.user_elo_before ?? DEFAULT_ELO;
+      return {
+        pct: eloToPercentileApprox(elo),
+        correct: row.correct,
+      };
+    });
+
+    const barWidth =
+      chartPoints.length > 0
+        ? Math.max(4, Math.floor((1200 * 0.8 - chartPoints.length * BAR_GAP) / chartPoints.length))
+        : 8;
 
     return new ImageResponse(
       (
@@ -43,16 +66,16 @@ export async function GET(request: NextRequest) {
             backgroundColor: '#2D5341',
             color: 'white',
             fontFamily: 'sans-serif',
-            padding: '60px',
+            padding: '48px 60px',
           }}
         >
           <div
             style={{
               display: 'flex',
-              fontSize: '28px',
+              fontSize: '24px',
               fontWeight: 500,
-              opacity: 0.8,
-              marginBottom: '40px',
+              opacity: 0.7,
+              marginBottom: '24px',
             }}
           >
             Spell Better Now
@@ -63,54 +86,63 @@ export async function GET(request: NextRequest) {
               display: 'flex',
               alignItems: 'baseline',
               gap: '12px',
-              marginBottom: '16px',
+              marginBottom: '12px',
             }}
           >
-            <span style={{ fontSize: '72px', fontWeight: 700 }}>
+            <span style={{ fontSize: '64px', fontWeight: 700 }}>
               {stats.correctTotal}/{stats.attemptsTotal}
             </span>
-            <span style={{ fontSize: '32px', opacity: 0.8 }}>correct</span>
+            <span style={{ fontSize: '28px', opacity: 0.8 }}>correct</span>
           </div>
 
           <div
             style={{
               display: 'flex',
-              gap: '40px',
-              marginBottom: '48px',
-              fontSize: '24px',
+              gap: '32px',
+              marginBottom: '32px',
+              fontSize: '22px',
             }}
           >
             <span>{winRate}% win rate</span>
             <span>Top {100 - percentile}%</span>
           </div>
 
+          {/* Sparkline chart */}
           <div
             style={{
               display: 'flex',
-              width: '80%',
-              height: '24px',
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              marginBottom: '48px',
+              alignItems: 'flex-end',
+              height: `${CHART_HEIGHT}px`,
+              gap: `${BAR_GAP}px`,
+              padding: '0 16px',
+              marginBottom: '32px',
+              borderBottom: '1px solid rgba(255,255,255,0.2)',
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                width: `${progressPct}%`,
-                height: '100%',
-                backgroundColor: '#8FD4A4',
-                borderRadius: '12px',
-              }}
-            />
+            {chartPoints.map((point, i) => {
+              const barHeight = Math.max(4, Math.round((point.pct / 100) * (CHART_HEIGHT - 8)));
+              return (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    width: `${barWidth}px`,
+                    height: `${barHeight}px`,
+                    backgroundColor: point.correct
+                      ? '#8FD4A4'
+                      : 'rgba(255,120,120,0.7)',
+                    borderRadius: '2px',
+                  }}
+                />
+              );
+            })}
           </div>
 
           <div
             style={{
               display: 'flex',
-              fontSize: '20px',
-              opacity: 0.6,
+              fontSize: '18px',
+              opacity: 0.5,
             }}
           >
             spellbetternow.cb.hypandra.com
