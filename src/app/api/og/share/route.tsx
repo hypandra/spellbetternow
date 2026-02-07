@@ -13,7 +13,8 @@ import {
 export const runtime = 'nodejs';
 
 const CHART_HEIGHT = 160;
-const BAR_GAP = 2;
+const CHART_WIDTH = 900;
+const DOT_SIZE = 10;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -48,10 +49,21 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    const barWidth =
-      chartPoints.length > 0
-        ? Math.max(4, Math.floor((1200 * 0.8 - chartPoints.length * BAR_GAP) / chartPoints.length))
-        : 8;
+    // Position dots evenly across chart width
+    const dotSpacing =
+      chartPoints.length > 1
+        ? CHART_WIDTH / (chartPoints.length - 1)
+        : CHART_WIDTH;
+
+    // Build SVG path for connecting line
+    const linePoints = chartPoints.map((point, i) => {
+      const x = chartPoints.length > 1 ? i * dotSpacing : CHART_WIDTH / 2;
+      const y = CHART_HEIGHT - (point.pct / 100) * CHART_HEIGHT;
+      return `${x},${y}`;
+    });
+    const linePath = linePoints.length > 1
+      ? `M ${linePoints.join(' L ')}`
+      : '';
 
     return new ImageResponse(
       (
@@ -107,31 +119,47 @@ export async function GET(request: NextRequest) {
             <span>Top {100 - percentile}%</span>
           </div>
 
-          {/* Sparkline chart */}
+          {/* Dot chart */}
           <div
             style={{
               display: 'flex',
-              alignItems: 'flex-end',
+              position: 'relative',
+              width: `${CHART_WIDTH}px`,
               height: `${CHART_HEIGHT}px`,
-              gap: `${BAR_GAP}px`,
-              padding: '0 16px',
               marginBottom: '32px',
               borderBottom: '1px solid rgba(255,255,255,0.2)',
             }}
           >
+            {linePath ? (
+              <svg
+                width={CHART_WIDTH}
+                height={CHART_HEIGHT}
+                style={{ position: 'absolute', top: 0, left: 0 }}
+              >
+                <path
+                  d={linePath}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.3)"
+                  strokeWidth="2"
+                />
+              </svg>
+            ) : null}
             {chartPoints.map((point, i) => {
-              const barHeight = Math.max(4, Math.round((point.pct / 100) * (CHART_HEIGHT - 8)));
+              const x = chartPoints.length > 1 ? i * dotSpacing : CHART_WIDTH / 2;
+              const y = CHART_HEIGHT - (point.pct / 100) * CHART_HEIGHT;
               return (
                 <div
                   key={i}
                   style={{
                     display: 'flex',
-                    width: `${barWidth}px`,
-                    height: `${barHeight}px`,
-                    backgroundColor: point.correct
-                      ? '#8FD4A4'
-                      : 'rgba(255,120,120,0.7)',
-                    borderRadius: '2px',
+                    position: 'absolute',
+                    left: `${x - DOT_SIZE / 2}px`,
+                    top: `${y - DOT_SIZE / 2}px`,
+                    width: `${DOT_SIZE}px`,
+                    height: `${DOT_SIZE}px`,
+                    borderRadius: '50%',
+                    backgroundColor: point.correct ? '#8FD4A4' : '#FF7878',
+                    border: '2px solid white',
                   }}
                 />
               );

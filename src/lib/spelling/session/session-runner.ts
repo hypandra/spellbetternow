@@ -300,7 +300,7 @@ export class SessionRunner {
           if (result.correct) {
             correctWords.push(w.word);
           } else {
-            const attempt = [...this.state.attempts].reverse().find(a => a.word_id === result.wordId);
+            const attempt = this.state.attempts.find(a => a.word_id === result.wordId && !a.correct);
             missedWords.push({
               word: w.word,
               userSpelling: attempt?.user_spelling ?? '',
