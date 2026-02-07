@@ -210,6 +210,20 @@ export class SessionRunner {
     const errorDetails = correct
       ? undefined
       : computeSpellingDiff(word.word, userSpelling.trim());
+
+    // Retry attempts (typed while looking at the answer) are not scored
+    if (!advance) {
+      return {
+        correct,
+        correctSpelling: word.word,
+        errorDetails,
+        nextStep: 'RETRY' as const,
+        advance: false,
+        nextWord: word,
+        attemptsTotal: this.state.attempts.length,
+      };
+    }
+
     const wordEloBefore = word.current_elo ?? levelToBaseElo(word.level);
     const update = calculateEloUpdate(this.state.currentElo, wordEloBefore, correct);
     const userEloBefore = this.state.currentElo;
@@ -248,18 +262,6 @@ export class SessionRunner {
       this.state.kidTotalAttempts,
       this.state.kidSuccessfulAttempts
     );
-
-    if (!advance) {
-      return {
-        correct,
-        correctSpelling: word.word,
-        errorDetails,
-        nextStep: 'RETRY' as const,
-        advance: false,
-        nextWord: word,
-        attemptsTotal: this.state.attempts.length,
-      };
-    }
 
     const wordIndex = this.state.wordIndex + 1;
     const isLastWord = wordIndex >= this.state.currentWordIds.length;
