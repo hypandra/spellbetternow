@@ -404,7 +404,7 @@ function TypedInputPanel({
           }
         }}
         placeholder={listenPlaceholder}
-        aria-label="Type the spelling you heard"
+        aria-label={listenPlaceholder}
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"
@@ -834,7 +834,7 @@ function useSpellPromptSubmission({
 export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUnlocked = false, onRequestUnlock }: SpellPromptProps) {
   const { theme } = useSpellingTheme();
   const themeContent = THEME_CONTENT[theme];
-  const listenPlaceholder = 'Type the spelling you heard';
+  const listenPlaceholder = 'Type the word you heard';
   const playButtonRef = useRef<HTMLButtonElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const isTouchDevice = useTouchDevice();
