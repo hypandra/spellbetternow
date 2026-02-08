@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SpellBetterNow is an adaptive spelling practice app for children. Kids complete "mini-sets" of 5 words, with difficulty adjusting based on performance. The app supports both authenticated (Supabase) and offline/local modes.
+SpellBetterNow is an adaptive spelling practice app for learners of all ages (children and adults). Learners complete "mini-sets" of 5 words, with difficulty adjusting based on performance. The app supports both authenticated (Supabase) and offline/local modes.
+
+**Commercial status:** SBN is a commercial product. Only use assets (word lists, data, etc.) with permissive licenses — public domain, CC-BY, CC-0, or similar. No CC-NC or other non-commercial-restricted content.
 
 ## Commands
 

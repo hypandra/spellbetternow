@@ -34,6 +34,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# word pipeline source data
+scripts/word-pipeline/data/
+
 # vercel
 .vercel
 
