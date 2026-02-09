@@ -37,6 +37,9 @@ yarn-error.log*
 # word pipeline source data
 scripts/word-pipeline/data/
 
+# hint pipeline output data
+scripts/hint-pipeline/data/
+
 # vercel
 .vercel
 

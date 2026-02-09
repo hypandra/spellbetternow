@@ -186,35 +186,50 @@ export default function SessionStart({ kidId, onStart, wordIds, onEnableSound }:
             </p>
           </div>
         )}
-        <div className="flex items-center justify-center gap-3">
-          <span className={`text-sm ${audioMode === 'audio' ? 'text-spelling-text font-medium' : 'text-spelling-text-muted'}`}>
-            Audio
-          </span>
+        <div className="flex items-center justify-center">
           <button
             type="button"
             onClick={toggleAudioMode}
             disabled={togglingMode}
-            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-              audioMode === 'no-audio'
-                ? 'bg-spelling-primary'
-                : 'bg-spelling-tertiary'
-            } disabled:opacity-50`}
-            role="switch"
-            aria-checked={audioMode === 'no-audio'}
-            aria-label="Toggle text hints mode"
+            className="relative flex h-10 w-60 items-center rounded-xl bg-spelling-tertiary/30 border border-spelling-border border-[style:var(--spelling-border-style)] p-1 disabled:opacity-50"
+            role="radiogroup"
+            aria-label="Spelling mode"
           >
+            {/* Sliding background */}
             <span
-              className={`inline-block h-5 w-5 rounded-full bg-spelling-surface transition-transform ${
-                audioMode === 'no-audio' ? 'translate-x-6' : 'translate-x-1'
+              className={`absolute top-1 h-8 w-[calc(50%-4px)] rounded-lg bg-spelling-primary shadow-sm transition-all duration-250 ease-in-out ${
+                audioMode === 'no-audio' ? 'left-[calc(50%+2px)]' : 'left-1'
               }`}
             />
+            {/* Audio option */}
+            <span
+              className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 text-sm transition-colors duration-200 ${
+                audioMode === 'audio' ? 'text-spelling-surface font-medium' : 'text-spelling-text-muted'
+              }`}
+              role="radio"
+              aria-checked={audioMode === 'audio'}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                <path d="M15.54 8.46a5 5 0 010 7.07" />
+              </svg>
+              Listen
+            </span>
+            {/* Text option */}
+            <span
+              className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 text-sm transition-colors duration-200 ${
+                audioMode === 'no-audio' ? 'text-spelling-surface font-medium' : 'text-spelling-text-muted'
+              }`}
+              role="radio"
+              aria-checked={audioMode === 'no-audio'}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+              </svg>
+              Read
+            </span>
           </button>
-          <span className={`text-sm ${audioMode === 'no-audio' ? 'text-spelling-text font-medium' : 'text-spelling-text-muted'}`}>
-            Text hints
-          </span>
-          <span className="text-[10px] uppercase tracking-wider text-spelling-text-muted bg-spelling-secondary px-1.5 py-0.5 rounded">
-            Beta
-          </span>
         </div>
 
         <button

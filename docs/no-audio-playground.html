@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>No-Audio Spelling Prompts — Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  h1 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #888;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Card */
+  .card {
+    background: #16213e;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 520px;
+    padding: 2rem 2.25rem;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  .level-badge {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #7c83ff;
+    background: rgba(124,131,255,0.12);
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+  }
+
+  .pos {
+    font-size: 0.8rem;
+    font-style: italic;
+    color: #9ca3af;
+    margin-bottom: 0.75rem;
+  }
+
+  .definition {
+    font-size: 1.15rem;
+    line-height: 1.55;
+    color: #f0f0f0;
+    margin-bottom: 1.25rem;
+  }
+
+  .sentence {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #b0b8c8;
+    padding: 0.85rem 1rem;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    border-left: 3px solid #3b4776;
+    margin-bottom: 1.25rem;
+  }
+
+  .sentence .blank {
+    display: inline-block;
+    min-width: 4.5em;
+    border-bottom: 2px dashed #7c83ff;
+    text-align: center;
+    margin: 0 0.15em;
+    vertical-align: baseline;
+    color: transparent;
+  }
+
+  .not-line {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+  }
+
+  .not-line strong {
+    color: #c87a7a;
+    font-weight: 600;
+  }
+
+  .not-line .synonym {
+    color: #b0b8c8;
+    font-style: italic;
+  }
+
+  .rhyme-line {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    background: rgba(124,131,255,0.06);
+    border-radius: 8px;
+    border: 1px solid rgba(124,131,255,0.12);
+  }
+
+  .rhyme-line strong {
+    color: #7c83ff;
+    font-weight: 600;
+  }
+
+  .rhyme-line .variants {
+    color: #b0b8c8;
+  }
+
+  .letters-line {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+  }
+
+  .letters-line strong {
+    color: #d4a853;
+    font-weight: 600;
+  }
+
+  .letters-line .fragments {
+    color: #b0b8c8;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    letter-spacing: 0.05em;
+  }
+
+  .hidden { display: none; }
+
+  /* Reveal */
+  .reveal-area {
+    margin-top: 1.5rem;
+    text-align: center;
+    min-height: 3rem;
+  }
+
+  .reveal-btn {
+    background: rgba(124,131,255,0.15);
+    color: #7c83ff;
+    border: 1px solid rgba(124,131,255,0.3);
+    border-radius: 8px;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+  .reveal-btn:hover { background: rgba(124,131,255,0.25); }
+
+  .answer {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #7c83ff;
+    letter-spacing: 0.05em;
+  }
+
+  /* Nav */
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    width: 100%;
+    max-width: 520px;
+    justify-content: space-between;
+  }
+
+  .nav-btn {
+    background: rgba(255,255,255,0.06);
+    color: #b0b8c8;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.1); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+  .counter {
+    font-size: 0.8rem;
+    color: #666;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Controls strip */
+  .controls {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 1.25rem;
+    width: 100%;
+    max-width: 520px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    color: #888;
+  }
+
+  .toggle-group input[type="checkbox"] {
+    accent-color: #7c83ff;
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Input area */
+  .input-area {
+    margin-top: 1.25rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .spell-input {
+    flex: 1;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 1.1rem;
+    color: #f0f0f0;
+    font-family: inherit;
+    letter-spacing: 0.03em;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .spell-input:focus {
+    border-color: #7c83ff;
+  }
+  .spell-input::placeholder {
+    color: #555;
+  }
+
+  .check-btn {
+    background: #7c83ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .check-btn:hover { opacity: 0.85; }
+
+  .result-msg {
+    text-align: center;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    min-height: 1.4em;
+  }
+  .result-msg.correct { color: #6bcb77; }
+  .result-msg.wrong { color: #e07a7a; }
+
+  /* Prompt output */
+  .prompt-section {
+    margin-top: 2rem;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .prompt-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #555;
+    margin-bottom: 0.5rem;
+  }
+
+  .prompt-box {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.78rem;
+    color: #999;
+    line-height: 1.6;
+    position: relative;
+    white-space: pre-wrap;
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    background: rgba(255,255,255,0.06);
+    color: #888;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,0.1); color: #bbb; }
+  .copy-btn.copied { color: #6bcb77; border-color: #6bcb77; }
+</style>
+</head>
+<body>
+
+<h1>No-Audio Spelling Prompt Preview</h1>
+
+<div class="card" id="card">
+  <div class="level-badge" id="level"></div>
+  <div class="pos" id="pos"></div>
+  <div class="definition" id="definition"></div>
+  <div class="sentence" id="sentence"></div>
+  <div class="not-line" id="not-line"></div>
+  <div class="letters-line" id="letters-line"></div>
+  <div class="rhyme-line" id="rhyme-line"></div>
+
+  <div class="input-area">
+    <input type="text" class="spell-input" id="spell-input" placeholder="Type your spelling..." autocomplete="off" spellcheck="false" autocapitalize="off">
+    <button class="check-btn" id="check-btn">Check</button>
+  </div>
+  <div class="result-msg" id="result-msg"></div>
+
+  <div class="reveal-area" id="reveal-area">
+    <button class="reveal-btn" id="reveal-btn">Reveal Answer</button>
+    <div class="answer hidden" id="answer"></div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prev-btn">&larr; Prev</button>
+  <span class="counter" id="counter"></span>
+  <button class="nav-btn" id="next-btn">Next &rarr;</button>
+</div>
+
+<div class="controls">
+  <label class="toggle-group">
+    <input type="checkbox" id="toggle-rhymes" checked>
+    Show rhyme hints
+  </label>
+  <label class="toggle-group">
+    <input type="checkbox" id="toggle-not" checked>
+    Show "Not:" hints
+  </label>
+  <label class="toggle-group">
+    <input type="checkbox" id="toggle-sentence" checked>
+    Show sentence
+  </label>
+</div>
+
+<div class="prompt-section">
+  <div class="prompt-label">Prompt format spec</div>
+  <div class="prompt-box" id="prompt-box">
+    <button class="copy-btn" id="copy-btn">Copy</button>
+    <span id="prompt-text"></span>
+  </div>
+</div>
+
+<script>
+const WORDS = [
+  {
+    word: "roe", level: 3, pos: "noun",
+    definition: "Fish eggs often eaten as a delicacy.",
+    sentence: "The sushi chef carefully prepared the ___.",
+    not: ["caviar", "spawn"],
+    letters: null,
+    rhyme: { variants: "go, dough, sew" }
+  },
+  {
+    word: "fractional", level: 6, pos: "adjective",
+    definition: "Representing only a tiny part of a whole.",
+    sentence: "Only a ___ portion of the pizza remained.",
+    not: ["partial", "slight", "minimal"],
+    letters: null,
+    rhyme: null
+  },
+  {
+    word: "chromatography", level: 7, pos: "noun",
+    definition: "A technique to separate components of a mixture.",
+    sentence: "Scientists used ___ to identify the ink colors.",
+    not: ["analysis", "filtration"],
+    letters: null,
+    rhyme: { variants: "Ends like: see, key, fee" }
+  },
+  {
+    word: "gavel", level: 4, pos: "noun",
+    definition: "A small hammer used by a judge or auctioneer.",
+    sentence: "The judge struck the ___ to maintain order.",
+    not: ["hammer", "mallet"],
+    letters: null,
+    rhyme: null
+  },
+  {
+    word: "access", level: 5, pos: "noun",
+    definition: "The ability or right to enter or use something.",
+    sentence: "You need a key card to gain ___ to the building.",
+    not: ["entry", "permission"],
+    letters: null,
+    rhyme: null
+  },
+  {
+    word: "agent", level: 4, pos: "noun",
+    definition: "A person who acts on behalf of another.",
+    sentence: "The ___ worked hard to help his client.",
+    not: ["representative", "delegate"],
+    letters: "…nt",
+    rhyme: null
+  },
+  {
+    word: "grant", level: 5, pos: "verb",
+    definition: "To give or allow something, often permission.",
+    sentence: "The principal decided to ___ the students a field trip.",
+    not: ["allow", "permit", "give"],
+    letters: "gr…",
+    rhyme: null
+  },
+  {
+    word: "capricious", level: 6, pos: "adjective",
+    definition: "Given to sudden and unaccountable changes of mood or behavior.",
+    sentence: "Her ___ decisions frustrated the whole team.",
+    not: ["unpredictable", "fickle", "moody"],
+    letters: null,
+    rhyme: { variants: "-icious, -itious (suspicious, ambitious, delicious)" }
+  },
+  {
+    word: "diphtheria", level: 6, pos: "noun",
+    definition: "A serious infectious disease affecting the throat and breathing.",
+    sentence: "Vaccination programs nearly eliminated ___.",
+    not: ["tetanus", "measles"],
+    letters: null,
+    rhyme: null
+  },
+  {
+    word: "definite", level: 5, pos: "adjective",
+    definition: "Clear and certain, not vague or unclear.",
+    sentence: "She gave a ___ answer about when the party would start.",
+    not: ["certain", "clear", "sure"],
+    letters: null,
+    rhyme: null
+  }
+];
+
+const state = {
+  index: 0,
+  revealed: false,
+  showRhymes: true,
+  showNot: true,
+  showSentence: true
+};
+
+const $ = id => document.getElementById(id);
+
+function render() {
+  const w = WORDS[state.index];
+
+  $('level').textContent = `Level ${w.level}`;
+  $('pos').textContent = w.pos;
+  $('definition').textContent = w.definition;
+
+  // Sentence
+  const sentenceEl = $('sentence');
+  if (state.showSentence) {
+    sentenceEl.classList.remove('hidden');
+    sentenceEl.innerHTML = w.sentence.replace('___', '<span class="blank">' + '\u00A0'.repeat(randomBlankLen(w.word.length)) + '</span>');
+  } else {
+    sentenceEl.classList.add('hidden');
+  }
+
+  // Not line
+  const notEl = $('not-line');
+  if (state.showNot && w.not && w.not.length > 0) {
+    notEl.classList.remove('hidden');
+    notEl.innerHTML = '<strong>Not:</strong> <span class="synonym">' + w.not.join(', ') + '</span>';
+  } else {
+    notEl.classList.add('hidden');
+  }
+
+  // Letters line
+  const lettersEl = $('letters-line');
+  if (w.letters) {
+    lettersEl.classList.remove('hidden');
+    lettersEl.innerHTML = '<strong>Letters:</strong> <span class="fragments">' + w.letters + '</span>';
+  } else {
+    lettersEl.classList.add('hidden');
+  }
+
+  // Rhyme line
+  const rhymeEl = $('rhyme-line');
+  if (state.showRhymes && w.rhyme) {
+    rhymeEl.classList.remove('hidden');
+    rhymeEl.innerHTML = '<strong>Rhyme:</strong> <span class="variants">' + w.rhyme.variants + '</span>';
+  } else {
+    rhymeEl.classList.add('hidden');
+  }
+
+  // Reveal
+  $('reveal-btn').classList.toggle('hidden', state.revealed);
+  const answerEl = $('answer');
+  answerEl.classList.toggle('hidden', !state.revealed);
+  answerEl.textContent = w.word;
+
+  // Input
+  $('spell-input').value = '';
+  $('result-msg').textContent = '';
+  $('result-msg').className = 'result-msg';
+
+  // Nav
+  $('counter').textContent = `${state.index + 1} / ${WORDS.length}`;
+  $('prev-btn').disabled = state.index === 0;
+  $('next-btn').disabled = state.index === WORDS.length - 1;
+
+  updatePrompt();
+}
+
+function randomBlankLen(wordLen) {
+  const offsets = [-2, -1, 0, 1, 2];
+  const offset = offsets[Math.floor(Math.random() * offsets.length)];
+  return Math.max(4, wordLen + offset);
+}
+
+function updatePrompt() {
+  const parts = ['No-audio spelling prompt format:'];
+  parts.push('1. Part of speech (italic)');
+  parts.push('2. Definition');
+
+  if (state.showSentence) {
+    parts.push('3. Masked sentence — word replaced with dashed blank (randomized length)');
+  }
+
+  if (state.showNot) {
+    parts.push(`${state.showSentence ? '4' : '3'}. "Not:" line — up to 3 synonyms that are NOT the answer`);
+  }
+
+  if (state.showRhymes) {
+    const n = 2 + (state.showSentence ? 1 : 0) + (state.showNot ? 1 : 0);
+    parts.push(`${n + 1}. "Rhyme:" line — ONLY when the hard-to-spell sound has 3+ spelling variants. Show the variants.`);
+  }
+
+  parts.push('');
+  parts.push('Rhyme rule: only include rhyme hints when the tricky sound in the word has 3+ common spellings. Show the spelling variants so the learner sees the ambiguity without being told which one is correct.');
+
+  $('prompt-text').textContent = parts.join('\n');
+}
+
+function checkSpelling() {
+  const w = WORDS[state.index];
+  const input = $('spell-input').value.trim().toLowerCase();
+  const msg = $('result-msg');
+
+  if (!input) return;
+
+  if (input === w.word.toLowerCase()) {
+    msg.textContent = 'Correct!';
+    msg.className = 'result-msg correct';
+  } else {
+    msg.textContent = `Not quite — try again`;
+    msg.className = 'result-msg wrong';
+  }
+}
+
+// Events
+$('prev-btn').addEventListener('click', () => {
+  if (state.index > 0) { state.index--; state.revealed = false; render(); }
+});
+$('next-btn').addEventListener('click', () => {
+  if (state.index < WORDS.length - 1) { state.index++; state.revealed = false; render(); }
+});
+$('reveal-btn').addEventListener('click', () => {
+  state.revealed = true; render();
+});
+
+$('check-btn').addEventListener('click', checkSpelling);
+$('spell-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkSpelling();
+});
+
+$('toggle-rhymes').addEventListener('change', e => {
+  state.showRhymes = e.target.checked; render();
+});
+$('toggle-not').addEventListener('change', e => {
+  state.showNot = e.target.checked; render();
+});
+$('toggle-sentence').addEventListener('change', e => {
+  state.showSentence = e.target.checked; render();
+});
+
+$('copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText($('prompt-text').textContent).then(() => {
+    const btn = $('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+});
+
+// Keyboard nav
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowLeft') $('prev-btn').click();
+  if (e.key === 'ArrowRight') $('next-btn').click();
+});
+
+// Init
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audio / Text Toggle — Design Alternatives</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #555;
+    margin-bottom: 2.5rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .variant {
+    background: #16213e;
+    border: 1px solid #2a2a4a;
+    border-radius: 14px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    transition: border-color 0.2s;
+  }
+  .variant:hover { border-color: #3a3a6a; }
+
+  .variant-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #555;
+    width: 100%;
+    text-align: center;
+  }
+
+  .variant-desc {
+    font-size: 0.75rem;
+    color: #777;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .demo-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    width: 100%;
+  }
+
+  /* Shared icon paths */
+  .icon-speaker::before { content: ''; }
+  .icon-text::before { content: ''; }
+
+  /* ========================================
+     1. CURRENT — basic switch
+     ======================================== */
+  .v1 .toggle-row {
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .v1 .label { font-size: 0.85rem; }
+  .v1 .label.active { color: #e0e0e0; font-weight: 600; }
+  .v1 .label.inactive { color: #666; }
+  .v1 .switch {
+    position: relative; width: 48px; height: 28px;
+    background: #2a2a4a; border-radius: 14px; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .v1 .switch.on { background: #7c83ff; }
+  .v1 .switch .thumb {
+    position: absolute; top: 4px; left: 4px;
+    width: 20px; height: 20px; background: #e0e0e0;
+    border-radius: 50%; transition: transform 0.2s;
+  }
+  .v1 .switch.on .thumb { transform: translateX(20px); }
+  .v1 .beta {
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: #888; background: rgba(124,131,255,0.15); padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  /* ========================================
+     2. SEGMENTED PILL — two-segment control
+     ======================================== */
+  .v2 .seg-pill {
+    display: flex; background: #0f1629; border-radius: 10px;
+    padding: 3px; gap: 2px; border: 1px solid #2a2a4a;
+  }
+  .v2 .seg {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.45rem 1rem; border-radius: 8px;
+    font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+    color: #666; user-select: none;
+  }
+  .v2 .seg.active {
+    background: #7c83ff; color: #fff; font-weight: 500;
+    box-shadow: 0 2px 8px rgba(124,131,255,0.3);
+  }
+  .v2 .seg svg { width: 16px; height: 16px; }
+
+  /* ========================================
+     3. ICON-ONLY SEGMENTED — compact
+     ======================================== */
+  .v3 .seg-compact {
+    display: flex; background: #0f1629; border-radius: 10px;
+    padding: 3px; border: 1px solid #2a2a4a;
+  }
+  .v3 .seg-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 36px; border-radius: 8px;
+    cursor: pointer; transition: all 0.2s; color: #555;
+  }
+  .v3 .seg-btn.active {
+    background: #7c83ff; color: #fff;
+    box-shadow: 0 2px 8px rgba(124,131,255,0.3);
+  }
+  .v3 .seg-btn svg { width: 18px; height: 18px; }
+  .v3 .mode-label {
+    font-size: 0.75rem; color: #888; margin-top: 0.25rem;
+    text-align: center;
+  }
+
+  /* ========================================
+     4. OUTLINED PILL PAIR — two separate pills
+     ======================================== */
+  .v4 .pill-pair { display: flex; gap: 0.5rem; }
+  .v4 .pill {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.4rem 0.9rem; border-radius: 20px;
+    font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
+    border: 1.5px solid #2a2a4a; color: #666; user-select: none;
+  }
+  .v4 .pill.active {
+    border-color: #7c83ff; color: #d0d4ff;
+    background: rgba(124,131,255,0.08);
+  }
+  .v4 .pill svg { width: 14px; height: 14px; }
+
+  /* ========================================
+     5. UNDERLINE TABS
+     ======================================== */
+  .v5 .tab-row { display: flex; gap: 0; }
+  .v5 .tab {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.5rem 1rem; font-size: 0.82rem;
+    cursor: pointer; transition: all 0.2s;
+    color: #666; border-bottom: 2px solid transparent;
+    user-select: none;
+  }
+  .v5 .tab.active {
+    color: #7c83ff; border-bottom-color: #7c83ff; font-weight: 500;
+  }
+  .v5 .tab svg { width: 15px; height: 15px; }
+
+  /* ========================================
+     6. FLOATING RADIO CHIPS
+     ======================================== */
+  .v6 .chip-row { display: flex; gap: 0.6rem; }
+  .v6 .chip {
+    display: flex; align-items: center; gap: 0.35rem;
+    padding: 0.4rem 0.85rem; border-radius: 8px;
+    font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
+    background: rgba(255,255,255,0.04); color: #666;
+    border: 1px solid transparent; user-select: none;
+  }
+  .v6 .chip.active {
+    background: rgba(124,131,255,0.12); color: #b0b4ff;
+    border-color: rgba(124,131,255,0.3);
+  }
+  .v6 .chip .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    border: 1.5px solid currentColor; position: relative;
+  }
+  .v6 .chip.active .dot::after {
+    content: ''; position: absolute; top: 1px; left: 1px;
+    width: 4px; height: 4px; border-radius: 50%;
+    background: #7c83ff;
+  }
+  .v6 .chip svg { width: 14px; height: 14px; }
+
+  /* ========================================
+     7. WIDE SEGMENTED — full-width
+     ======================================== */
+  .v7 .seg-wide {
+    display: flex; background: #0f1629; border-radius: 12px;
+    padding: 4px; border: 1px solid #2a2a4a; width: 280px;
+  }
+  .v7 .seg-w {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    gap: 0.4rem; padding: 0.55rem 0; border-radius: 9px;
+    font-size: 0.82rem; cursor: pointer; transition: all 0.25s;
+    color: #555; user-select: none;
+  }
+  .v7 .seg-w.active {
+    background: linear-gradient(135deg, #6366f1, #7c83ff);
+    color: #fff; font-weight: 500;
+    box-shadow: 0 2px 12px rgba(124,131,255,0.25);
+  }
+  .v7 .seg-w svg { width: 16px; height: 16px; }
+
+  /* ========================================
+     8. ICON TOGGLE — single icon button that morphs
+     ======================================== */
+  .v8 .icon-toggle {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.5rem 1rem; border-radius: 10px;
+    background: rgba(255,255,255,0.04); border: 1px solid #2a2a4a;
+    cursor: pointer; transition: all 0.2s; user-select: none;
+  }
+  .v8 .icon-toggle:hover { background: rgba(255,255,255,0.06); }
+  .v8 .icon-toggle svg { width: 20px; height: 20px; color: #7c83ff; }
+  .v8 .icon-toggle .mode-text {
+    font-size: 0.85rem; color: #b0b8c8;
+  }
+  .v8 .icon-toggle .swap-hint {
+    font-size: 0.65rem; color: #555; margin-left: auto;
+  }
+
+  /* ========================================
+     9. SLIDER WITH ICONS — horizontal slider track
+     ======================================== */
+  .v9 .slider-track {
+    position: relative; width: 240px; height: 40px;
+    background: #0f1629; border-radius: 12px;
+    border: 1px solid #2a2a4a; overflow: hidden;
+    cursor: pointer;
+  }
+  .v9 .slider-fill {
+    position: absolute; top: 3px; bottom: 3px;
+    width: calc(50% - 3px); border-radius: 9px;
+    background: #7c83ff; transition: left 0.25s;
+    box-shadow: 0 2px 8px rgba(124,131,255,0.3);
+  }
+  .v9 .slider-fill.right { left: calc(50% + 1px); }
+  .v9 .slider-fill.left { left: 3px; }
+  .v9 .slider-labels {
+    position: relative; display: flex; height: 100%;
+    z-index: 1;
+  }
+  .v9 .slider-label {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    gap: 0.35rem; font-size: 0.8rem; color: #555; transition: color 0.25s;
+    user-select: none;
+  }
+  .v9 .slider-label.active { color: #fff; font-weight: 500; }
+  .v9 .slider-label svg { width: 16px; height: 16px; }
+
+  /* ========================================
+     10. STACKED CARDS — vertical selection
+     ======================================== */
+  .v10 .card-stack { display: flex; flex-direction: column; gap: 0.5rem; width: 260px; }
+  .v10 .mode-card {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 1rem; border-radius: 10px;
+    border: 1.5px solid #2a2a4a; cursor: pointer;
+    transition: all 0.2s; user-select: none;
+  }
+  .v10 .mode-card.active {
+    border-color: #7c83ff; background: rgba(124,131,255,0.06);
+  }
+  .v10 .mode-card svg { width: 18px; height: 18px; color: #555; flex-shrink: 0; }
+  .v10 .mode-card.active svg { color: #7c83ff; }
+  .v10 .mode-card .mc-label { font-size: 0.82rem; color: #888; }
+  .v10 .mode-card.active .mc-label { color: #d0d4ff; font-weight: 500; }
+  .v10 .mode-card .mc-desc { font-size: 0.65rem; color: #555; }
+  .v10 .mode-card.active .mc-desc { color: #888; }
+  .v10 .mode-card .mc-text { display: flex; flex-direction: column; gap: 1px; }
+  .v10 .mode-card .check {
+    margin-left: auto; width: 18px; height: 18px;
+    border-radius: 50%; border: 1.5px solid #2a2a4a;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .v10 .mode-card.active .check {
+    border-color: #7c83ff; background: #7c83ff;
+  }
+  .v10 .mode-card.active .check::after {
+    content: ''; display: block; width: 6px; height: 6px;
+    border-radius: 50%; background: #fff;
+  }
+
+  /* ========================================
+     11. MINIMAL TEXT LINK — ultra-subtle
+     ======================================== */
+  .v11 .text-toggle {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.82rem; color: #888; cursor: pointer;
+    user-select: none;
+  }
+  .v11 .text-toggle .current { color: #b0b4ff; font-weight: 500; }
+  .v11 .text-toggle .switch-link {
+    color: #555; text-decoration: underline;
+    text-decoration-style: dotted; text-underline-offset: 3px;
+  }
+  .v11 .text-toggle .switch-link:hover { color: #888; }
+  .v11 .text-toggle svg { width: 15px; height: 15px; color: #7c83ff; }
+
+  /* ========================================
+     12. EMOJI PILL — playful
+     ======================================== */
+  .v12 .emoji-pill {
+    display: flex; background: #0f1629; border-radius: 24px;
+    padding: 3px; border: 1px solid #2a2a4a;
+  }
+  .v12 .ep {
+    display: flex; align-items: center; gap: 0.35rem;
+    padding: 0.4rem 1rem; border-radius: 20px;
+    font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+    color: #666; user-select: none;
+  }
+  .v12 .ep.active {
+    background: rgba(124,131,255,0.15); color: #d0d4ff;
+  }
+  .v12 .ep .emoji { font-size: 1rem; }
+</style>
+</head>
+<body>
+
+<h1>Audio / Text Toggle Alternatives</h1>
+<p class="subtitle">Click any toggle to see it switch. Current state: Audio (left) vs Text Hints (right).</p>
+
+<div class="grid">
+
+  <!-- 1. CURRENT -->
+  <div class="variant v1" data-mode="audio">
+    <div class="variant-label">1. Current (basic switch)</div>
+    <div class="demo-area">
+      <div class="toggle-row">
+        <span class="label active" data-for="audio">Audio</span>
+        <div class="switch" onclick="toggleV(this)">
+          <div class="thumb"></div>
+        </div>
+        <span class="label inactive" data-for="text">Text hints</span>
+        <span class="beta">Beta</span>
+      </div>
+    </div>
+    <div class="variant-desc">Simple and functional but easy to miss. Labels compete with page content.</div>
+  </div>
+
+  <!-- 2. SEGMENTED PILL -->
+  <div class="variant v2" data-mode="audio">
+    <div class="variant-label">2. Segmented pill</div>
+    <div class="demo-area">
+      <div class="seg-pill">
+        <div class="seg active" data-for="audio" onclick="toggleSeg(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+          Audio
+        </div>
+        <div class="seg" data-for="text" onclick="toggleSeg(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          Text
+        </div>
+      </div>
+    </div>
+    <div class="variant-desc">Clear affordance. Active segment is obvious. Icons add recognition.</div>
+  </div>
+
+  <!-- 3. ICON-ONLY SEGMENTED -->
+  <div class="variant v3" data-mode="audio">
+    <div class="variant-label">3. Icon-only compact</div>
+    <div class="demo-area">
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="seg-compact">
+          <div class="seg-btn active" data-for="audio" onclick="toggleSeg(this)" title="Audio mode">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+          </div>
+          <div class="seg-btn" data-for="text" onclick="toggleSeg(this)" title="Text hints mode">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          </div>
+        </div>
+        <div class="mode-label">Audio mode</div>
+      </div>
+    </div>
+    <div class="variant-desc">Minimal footprint. Good for mobile. Needs tooltips for accessibility.</div>
+  </div>
+
+  <!-- 4. OUTLINED PILL PAIR -->
+  <div class="variant v4" data-mode="audio">
+    <div class="variant-label">4. Outlined pill pair</div>
+    <div class="demo-area">
+      <div class="pill-pair">
+        <div class="pill active" data-for="audio" onclick="toggleSeg(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+          Audio
+        </div>
+        <div class="pill" data-for="text" onclick="toggleSeg(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          Text hints
+        </div>
+      </div>
+    </div>
+    <div class="variant-desc">Separated pills feel like independent choices. Subtle border glow on active.</div>
+  </div>
+
+  <!-- 5. UNDERLINE TABS -->
+  <div class="variant v5" data-mode="audio">
+    <div class="variant-label">5. Underline tabs</div>
+    <div class="demo-area">
+      <div class="tab-row">
+        <div class="tab active" data-for="audio" onclick="toggleSeg(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+          Audio
+        </div>
+        <div class="tab" data-for="text" onclick="toggleSeg(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          Text hints
+        </div>
+      </div>
+    </div>
+    <div class="variant-desc">Classic tab pattern. Clean and familiar. Underline draws eye to selection.</div>
+  </div>
+
+  <!-- 6. FLOATING RADIO CHIPS -->
+  <div class="variant v6" data-mode="audio">
+    <div class="variant-label">6. Radio chips</div>
+    <div class="demo-area">
+      <div class="chip-row">
+        <div class="chip active" data-for="audio" onclick="toggleSeg(this)">
+          <span class="dot"></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+          Audio
+        </div>
+        <div class="chip" data-for="text" onclick="toggleSeg(this)">
+          <span class="dot"></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          Text hints
+        </div>
+      </div>
+    </div>
+    <div class="variant-desc">Radio button metaphor makes selection model explicit. Familiar form pattern.</div>
+  </div>
+
+  <!-- 7. WIDE SEGMENTED WITH GRADIENT -->
+  <div class="variant v7" data-mode="audio">
+    <div class="variant-label">7. Wide segmented + gradient</div>
+    <div class="demo-area">
+      <div class="seg-wide">
+        <div class="seg-w active" data-for="audio" onclick="toggleSeg(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+          Audio
+        </div>
+        <div class="seg-w" data-for="text" onclick="toggleSeg(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          Text hints
+        </div>
+      </div>
+    </div>
+    <div class="variant-desc">Wider touch target. Gradient adds polish. Good for primary UI control.</div>
+  </div>
+
+  <!-- 8. ICON TOGGLE BUTTON -->
+  <div class="variant v8" data-mode="audio">
+    <div class="variant-label">8. Single icon button</div>
+    <div class="demo-area">
+      <div class="icon-toggle" onclick="toggleV8(this)">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+        <span class="mode-text">Audio mode</span>
+        <span class="swap-hint">tap to switch</span>
+      </div>
+    </div>
+    <div class="variant-desc">Single button that morphs. Compact but hides the other option.</div>
+  </div>
+
+  <!-- 9. SLIDER -->
+  <div class="variant v9" data-mode="audio">
+    <div class="variant-label">9. Sliding selector</div>
+    <div class="demo-area">
+      <div class="slider-track" onclick="toggleV9(this)">
+        <div class="slider-fill left"></div>
+        <div class="slider-labels">
+          <div class="slider-label active" data-for="audio">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+            Audio
+          </div>
+          <div class="slider-label" data-for="text">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+            Text
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="variant-desc">Animated sliding background. Satisfying interaction. Clear binary choice.</div>
+  </div>
+
+  <!-- 10. STACKED CARDS -->
+  <div class="variant v10" data-mode="audio">
+    <div class="variant-label">10. Stacked cards</div>
+    <div class="demo-area">
+      <div class="card-stack">
+        <div class="mode-card active" data-for="audio" onclick="toggleSeg(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+          <div class="mc-text">
+            <div class="mc-label">Audio</div>
+            <div class="mc-desc">Listen and spell</div>
+          </div>
+          <div class="check"></div>
+        </div>
+        <div class="mode-card" data-for="text" onclick="toggleSeg(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          <div class="mc-text">
+            <div class="mc-label">Text hints</div>
+            <div class="mc-desc">Read clues and spell</div>
+          </div>
+          <div class="check"></div>
+        </div>
+      </div>
+    </div>
+    <div class="variant-desc">Most descriptive. Explains each mode. Takes more space but very clear.</div>
+  </div>
+
+  <!-- 11. MINIMAL TEXT -->
+  <div class="variant v11" data-mode="audio">
+    <div class="variant-label">11. Minimal text link</div>
+    <div class="demo-area">
+      <div class="text-toggle" onclick="toggleV11(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+        <span class="current">Audio</span>
+        <span style="color:#444">/</span>
+        <span class="switch-link">Switch to text</span>
+      </div>
+    </div>
+    <div class="variant-desc">Ultra-subtle. Stays out of the way. Good if toggle is secondary to main action.</div>
+  </div>
+
+  <!-- 12. EMOJI PILL -->
+  <div class="variant v12" data-mode="audio">
+    <div class="variant-label">12. Emoji pill</div>
+    <div class="demo-area">
+      <div class="emoji-pill">
+        <div class="ep active" data-for="audio" onclick="toggleSeg(this)">
+          <span class="emoji">&#x1F50A;</span> Listen
+        </div>
+        <div class="ep" data-for="text" onclick="toggleSeg(this)">
+          <span class="emoji">&#x1F4D6;</span> Read
+        </div>
+      </div>
+    </div>
+    <div class="variant-desc">Playful and kid-friendly. Emojis provide instant recognition. "Listen" / "Read" is clearer than "Audio" / "Text hints".</div>
+  </div>
+
+</div>
+
+<script>
+// Generic segmented toggle (works for v2, v3, v4, v5, v6, v7, v10, v12)
+function toggleSeg(el) {
+  const parent = el.closest('[data-mode]');
+  const siblings = el.parentElement.children;
+  const isText = el.dataset.for === 'text';
+
+  for (const s of siblings) {
+    s.classList.toggle('active', s === el);
+  }
+  parent.dataset.mode = isText ? 'text' : 'audio';
+
+  // Update labels for v3
+  const modeLabel = parent.querySelector('.mode-label');
+  if (modeLabel) {
+    modeLabel.textContent = isText ? 'Text hints mode' : 'Audio mode';
+  }
+}
+
+// V1 switch toggle
+function toggleV(sw) {
+  const parent = sw.closest('[data-mode]');
+  const isOn = sw.classList.toggle('on');
+  parent.dataset.mode = isOn ? 'text' : 'audio';
+
+  const labels = parent.querySelectorAll('.label');
+  labels.forEach(l => {
+    const isAudio = l.dataset.for === 'audio';
+    l.classList.toggle('active', isOn ? !isAudio : isAudio);
+    l.classList.toggle('inactive', isOn ? isAudio : !isAudio);
+  });
+}
+
+// V8 morphing button
+function toggleV8(el) {
+  const parent = el.closest('[data-mode]');
+  const isAudio = parent.dataset.mode === 'audio';
+  parent.dataset.mode = isAudio ? 'text' : 'audio';
+
+  const svg = el.querySelector('.ico');
+  const text = el.querySelector('.mode-text');
+
+  if (isAudio) {
+    svg.innerHTML = '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" fill="none" stroke="currentColor" stroke-width="2"/>';
+    text.textContent = 'Text hints mode';
+  } else {
+    svg.innerHTML = '<path d="M11 5L6 9H2v6h4l5 4V5z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.54 8.46a5 5 0 010 7.07" fill="none" stroke="currentColor" stroke-width="2"/>';
+    text.textContent = 'Audio mode';
+  }
+}
+
+// V9 slider
+function toggleV9(el) {
+  const parent = el.closest('[data-mode]');
+  const isAudio = parent.dataset.mode === 'audio';
+  parent.dataset.mode = isAudio ? 'text' : 'audio';
+
+  const fill = el.querySelector('.slider-fill');
+  fill.classList.toggle('left', !isAudio);
+  fill.classList.toggle('right', isAudio);
+
+  const labels = el.querySelectorAll('.slider-label');
+  labels.forEach(l => {
+    const isAudioLabel = l.dataset.for === 'audio';
+    l.classList.toggle('active', isAudio ? !isAudioLabel : isAudioLabel);
+  });
+}
+
+// V11 text toggle
+function toggleV11(el) {
+  const parent = el.closest('[data-mode]');
+  const isAudio = parent.dataset.mode === 'audio';
+  parent.dataset.mode = isAudio ? 'text' : 'audio';
+
+  const svg = el.querySelector('svg');
+  const current = el.querySelector('.current');
+  const link = el.querySelector('.switch-link');
+
+  if (isAudio) {
+    svg.innerHTML = '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" fill="none" stroke="currentColor" stroke-width="2"/>';
+    current.textContent = 'Text hints';
+    link.textContent = 'Switch to audio';
+  } else {
+    svg.innerHTML = '<path d="M11 5L6 9H2v6h4l5 4V5z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.54 8.46a5 5 0 010 7.07" fill="none" stroke="currentColor" stroke-width="2"/>';
+    current.textContent = 'Audio';
+    link.textContent = 'Switch to text';
+  }
+}
+</script>
+</body>
+</html>
