@@ -29,6 +29,7 @@ export interface AttemptData {
   response_ms: number;
   replay_count?: number;
   edit_count?: number;
+  prompt_mode?: 'audio' | 'no-audio';
 }
 
 export interface MiniSetSummaryData {
@@ -141,7 +142,7 @@ export async function logAttempt(
     wordEloBefore: number;
     wordEloAfter: number;
   }
-): Promise<void> {
+): Promise<string | undefined> {
   const supabase = getSupabaseClient();
   if (process.env.NODE_ENV !== 'production') {
     console.info('[Spelling Attempt] saving user input', {
@@ -152,7 +153,7 @@ export async function logAttempt(
       userSpelling: attemptData.user_spelling,
     });
   }
-  const { error } = await supabase
+  const { data: insertedAttempt, error } = await supabase
     .from('spelling_attempts')
     .insert({
       session_id: sessionId,
@@ -168,7 +169,10 @@ export async function logAttempt(
       user_elo_after: eloMeta?.userEloAfter,
       word_elo_before: eloMeta?.wordEloBefore,
       word_elo_after: eloMeta?.wordEloAfter,
-    });
+      prompt_mode: attemptData.prompt_mode || null,
+    })
+    .select('id')
+    .single();
 
   if (error) throw error;
 
@@ -189,6 +193,8 @@ export async function logAttempt(
         .eq('id', sessionId);
     }
   }
+
+  return insertedAttempt?.id;
 }
 
 export async function createMiniSetSummary(sessionId: string, summaryData: MiniSetSummaryData): Promise<void> {

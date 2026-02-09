@@ -29,6 +29,7 @@ interface StateMachineProps {
   finishStats: FinishStats | null;
   assessmentSuggestedLevel: number | null;
   assessmentMaxLevel: number | null;
+  lastAttemptId?: string | null;
   onApplyAssessmentLevel: (level: number) => Promise<void>;
   onStart: (wordIds?: string[]) => void;
   onSubmit: (
@@ -59,6 +60,7 @@ export default function StateMachine({
   finishStats,
   assessmentSuggestedLevel,
   assessmentMaxLevel,
+  lastAttemptId,
   onApplyAssessmentLevel,
   onStart,
   onSubmit,
@@ -98,6 +100,8 @@ export default function StateMachine({
               onSubmit={onSubmit}
               audioUnlocked={audioUnlocked}
               onRequestUnlock={() => setAudioUnlocked(true)}
+              kidId={kidId}
+              lastAttemptId={lastAttemptId}
             />
           ) : null}
         </SpellingErrorBoundary>

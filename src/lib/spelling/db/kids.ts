@@ -14,6 +14,7 @@ export interface Kid {
   successful_attempts?: number;
   percentile?: number;
   avatar_seed?: string;
+  audio_mode?: 'audio' | 'no-audio';
   created_at: string;
   updated_at: string;
 }

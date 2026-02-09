@@ -14,6 +14,10 @@ export interface Word {
   notes?: string;
   definition?: string;
   example_sentence?: string;
+  part_of_speech?: string;
+  not_synonyms?: string[];
+  letter_fragments?: string[];
+  rhyme_hints?: string[];
   is_active: boolean;
   created_at: string;
 }

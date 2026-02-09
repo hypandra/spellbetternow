@@ -52,6 +52,56 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { audio_mode } = body as { audio_mode?: string };
+
+    if (audio_mode !== 'audio' && audio_mode !== 'no-audio') {
+      return NextResponse.json({ error: 'audio_mode must be "audio" or "no-audio"' }, { status: 400 });
+    }
+
+    const supabase = getServiceClient();
+
+    const { data: kid, error: fetchError } = await supabase
+      .from('spelling_kids')
+      .select('id, parent_user_id')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (fetchError) {
+      return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    }
+
+    if (!kid || kid.parent_user_id !== session.user.id) {
+      return NextResponse.json({ error: 'Kid not found' }, { status: 404 });
+    }
+
+    const { error: updateError } = await supabase
+      .from('spelling_kids')
+      .update({ audio_mode, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, audio_mode });
+  } catch (error) {
+    console.error('[Spelling Kids] PATCH error:', error);
+    return NextResponse.json({ error: 'Failed to update kid' }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

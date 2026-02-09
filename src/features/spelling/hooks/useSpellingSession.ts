@@ -4,6 +4,7 @@ import type { Word } from '@/lib/spelling/db/words';
 import type {
   BreakData,
   InputMode,
+  PromptMode,
   SessionState,
   SpellingPromptData,
 } from '@/features/spelling/types/session';
@@ -30,6 +31,7 @@ interface UseSpellingSessionResult {
   finishStats: FinishStats | null;
   assessmentSuggestedLevel: number | null;
   assessmentMaxLevel: number | null;
+  lastAttemptId: string | null;
   loading: boolean;
   error: SessionErrorKind | null;
   errorMessage: string | null;
@@ -53,7 +55,7 @@ interface UseSpellingSessionResult {
 
 export function useSpellingSession(
   kidId: string | null,
-  options?: { wordIds?: string[]; autoStart?: boolean; assessment?: boolean }
+  options?: { wordIds?: string[]; autoStart?: boolean; assessment?: boolean; mode?: PromptMode }
 ): UseSpellingSessionResult {
   const [state, setState] = useState<SessionState>('START');
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -66,6 +68,7 @@ export function useSpellingSession(
   const [finishStats, setFinishStats] = useState<FinishStats | null>(null);
   const [assessmentSuggestedLevel, setAssessmentSuggestedLevel] = useState<number | null>(null);
   const [assessmentMaxLevel, setAssessmentMaxLevel] = useState<number | null>(null);
+  const [lastAttemptId, setLastAttemptId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<SessionErrorKind | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -115,6 +118,7 @@ export function useSpellingSession(
             : undefined;
       const data = await SpellingSessionClient.start(kidId, wordIds, {
         assessment: assessmentMode,
+        mode: options?.mode,
       });
 
       if (data.error) {
@@ -174,6 +178,10 @@ export function useSpellingSession(
         editCount: options?.editCount,
         advance: options?.advance,
       });
+
+      if (data.attemptId) {
+        setLastAttemptId(data.attemptId);
+      }
 
       if (data.advance === false) {
         if (data.nextWord) {
@@ -287,6 +295,7 @@ export function useSpellingSession(
     finishStats,
     assessmentSuggestedLevel,
     assessmentMaxLevel,
+    lastAttemptId,
     loading,
     error,
     errorMessage,

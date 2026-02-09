@@ -36,6 +36,7 @@ export interface SessionRunnerState {
   confidenceScore: number;
   assessmentMode: boolean;
   maxLevel: number;
+  promptMode?: 'audio' | 'no-audio';
 }
 
 export class SessionRunner {
@@ -188,6 +189,7 @@ export class SessionRunner {
     nextStep: 'NEXT_WORD' | 'BREAK' | 'RETRY';
     advance: boolean;
     nextWord?: Word | null;
+    attemptId?: string;
     breakSummary?: {
       correct: string[];
       missed: Array<{ word: string; userSpelling: string }>;
@@ -238,9 +240,10 @@ export class SessionRunner {
       response_ms: responseMs,
       replay_count: replayCount,
       edit_count: editCount,
+      prompt_mode: this.state.promptMode,
     };
 
-    await logAttempt(this.state.sessionId, this.state.kidId, attemptData, {
+    const attemptId = await logAttempt(this.state.sessionId, this.state.kidId, attemptData, {
       userEloBefore,
       userEloAfter,
       wordEloBefore,
@@ -287,6 +290,7 @@ export class SessionRunner {
         nextStep: 'NEXT_WORD' as const,
         advance: true,
         nextWord: nextWord || null,
+        attemptId,
         attemptsTotal: this.state.attempts.length,
       };
     } else {
@@ -319,6 +323,7 @@ export class SessionRunner {
         errorDetails,
         nextStep: 'BREAK' as const,
         advance: true,
+        attemptId,
         breakSummary: {
           correct: correctWords,
           missed: missedWords,

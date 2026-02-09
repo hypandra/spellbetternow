@@ -6,6 +6,7 @@ import { getKid } from '@/lib/spelling/db/kids';
 import { getMaxWordLevel, getWordsByIds } from '@/lib/spelling/db/words';
 import { buildPromptData } from '@/lib/spelling/session/prompt';
 import { saveSessionRunnerState } from '@/lib/spelling/db/session-runners';
+import type { PromptMode } from '@/features/spelling/types/session';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,10 +16,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { kidId, wordIds, assessment } = body as {
+    const { kidId, wordIds, assessment, mode } = body as {
       kidId?: string;
       wordIds?: string[];
       assessment?: boolean;
+      mode?: PromptMode;
     };
 
     if (!kidId) {
@@ -64,9 +66,16 @@ export async function POST(request: NextRequest) {
       totalAttempts: resolvedKid.total_attempts ?? 0,
       successfulAttempts: resolvedKid.successful_attempts ?? 0,
     });
-    await saveSessionRunnerState(result.sessionId, runner.getState());
+    // Resolve prompt mode: explicit param > kid preference > default
+    const promptMode: PromptMode = mode ?? resolvedKid.audio_mode ?? 'audio';
+
+    // Store prompt mode in runner state for subsequent actions
+    const runnerState = runner.getState();
+    runnerState.promptMode = promptMode;
+    await saveSessionRunnerState(result.sessionId, runnerState);
+
     const currentPrompt = result.currentWord
-      ? buildPromptData(result.currentWord, result.level)
+      ? buildPromptData(result.currentWord, result.level, promptMode)
       : null;
 
     return NextResponse.json({

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Kid } from '@/lib/spelling/db/kids';
+import type { PromptMode } from '@/features/spelling/types/session';
 import { createClient } from '@/utils/supabase/client';
 import { useSpellingTheme } from '@/features/spelling/contexts/SpellingThemeContext';
 import { THEME_CONTENT } from '@/features/spelling/constants/theme-content';
@@ -25,6 +26,8 @@ export default function SessionStart({ kidId, onStart, wordIds, onEnableSound }:
   const [kid, setKid] = useState<Kid | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedWords, setSelectedWords] = useState<WordSelection[]>([]);
+  const [audioMode, setAudioMode] = useState<PromptMode>('audio');
+  const [togglingMode, setTogglingMode] = useState(false);
   const { data: session, isPending } = useSession();
 
   useEffect(() => {
@@ -58,6 +61,7 @@ export default function SessionStart({ kidId, onStart, wordIds, onEnableSound }:
       }
 
       setKid(kidData);
+      setAudioMode(kidData.audio_mode ?? 'audio');
 
       if (wordIds?.length) {
         const { data: wordsData, error: wordsError } = await supabase
@@ -80,6 +84,26 @@ export default function SessionStart({ kidId, onStart, wordIds, onEnableSound }:
 
     loadKid();
   }, [isPending, kidId, session, wordIds]);
+
+  async function toggleAudioMode() {
+    if (!kid || togglingMode) return;
+    const newMode: PromptMode = audioMode === 'audio' ? 'no-audio' : 'audio';
+    setTogglingMode(true);
+    try {
+      const res = await fetch(`/api/spelling/kids/${kid.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audio_mode: newMode }),
+      });
+      if (res.ok) {
+        setAudioMode(newMode);
+      }
+    } catch (err) {
+      console.error('Failed to update audio mode:', err);
+    } finally {
+      setTogglingMode(false);
+    }
+  }
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -122,7 +146,9 @@ export default function SessionStart({ kidId, onStart, wordIds, onEnableSound }:
       <div className="text-center space-y-6">
         <h1 className="text-4xl font-bold text-spelling-text">Ready to Spell?</h1>
         <p className="text-sm text-spelling-text-muted">
-          Listen to each word, then spell it. 5 words per set.
+          {audioMode === 'no-audio'
+            ? 'Read the hints, then spell the word. 5 words per set.'
+            : 'Listen to each word, then spell it. 5 words per set.'}
         </p>
         <div className="text-2xl">
           <p className="font-semibold text-spelling-text">{kid.display_name}</p>
@@ -160,9 +186,42 @@ export default function SessionStart({ kidId, onStart, wordIds, onEnableSound }:
             </p>
           </div>
         )}
+        <div className="flex items-center justify-center gap-3">
+          <span className={`text-sm ${audioMode === 'audio' ? 'text-spelling-text font-medium' : 'text-spelling-text-muted'}`}>
+            Audio
+          </span>
+          <button
+            type="button"
+            onClick={toggleAudioMode}
+            disabled={togglingMode}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+              audioMode === 'no-audio'
+                ? 'bg-spelling-primary'
+                : 'bg-spelling-tertiary'
+            } disabled:opacity-50`}
+            role="switch"
+            aria-checked={audioMode === 'no-audio'}
+            aria-label="Toggle text hints mode"
+          >
+            <span
+              className={`inline-block h-5 w-5 rounded-full bg-spelling-surface transition-transform ${
+                audioMode === 'no-audio' ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+          <span className={`text-sm ${audioMode === 'no-audio' ? 'text-spelling-text font-medium' : 'text-spelling-text-muted'}`}>
+            Text hints
+          </span>
+          <span className="text-[10px] uppercase tracking-wider text-spelling-text-muted bg-spelling-secondary px-1.5 py-0.5 rounded">
+            Beta
+          </span>
+        </div>
+
         <button
           onClick={() => {
-            onEnableSound?.();
+            if (audioMode === 'audio') {
+              onEnableSound?.();
+            }
             if (selectedWords.length > 0) {
               onStart(selectedWords.map(word => word.id));
               return;

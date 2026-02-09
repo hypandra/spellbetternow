@@ -20,6 +20,7 @@ interface MobileKeyboardProps {
   onRight?: () => void;
   submitDisabled?: boolean;
   replayDisabled?: boolean;
+  hideReplay?: boolean;
   submitLabel?: string;
   replayLabel?: string;
 }
@@ -33,6 +34,7 @@ export default function MobileKeyboard({
   onRight,
   submitDisabled = false,
   replayDisabled = false,
+  hideReplay = false,
   submitLabel = 'Check',
   replayLabel = 'Listen',
 }: MobileKeyboardProps) {
@@ -140,16 +142,18 @@ export default function MobileKeyboard({
       )}
       {/* Bottom row: replay + submit */}
       <div className="flex justify-center gap-[3px]">
-        <button
-          type="button"
-          onMouseDown={guard(onReplay)}
-          onTouchStart={guard(onReplay)}
-          disabled={replayDisabled}
-          className="flex items-center justify-center h-12 flex-1 rounded-md bg-spelling-accent text-spelling-text text-sm font-semibold active:bg-spelling-tertiary disabled:opacity-50"
-          aria-label="Listen again"
-        >
-          {replayLabel}
-        </button>
+        {!hideReplay && (
+          <button
+            type="button"
+            onMouseDown={guard(onReplay)}
+            onTouchStart={guard(onReplay)}
+            disabled={replayDisabled}
+            className="flex items-center justify-center h-12 flex-1 rounded-md bg-spelling-accent text-spelling-text text-sm font-semibold active:bg-spelling-tertiary disabled:opacity-50"
+            aria-label="Listen again"
+          >
+            {replayLabel}
+          </button>
+        )}
         <button
           type="button"
           onMouseDown={guard(onSubmit)}

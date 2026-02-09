@@ -8,8 +8,11 @@ import { useSpellingTheme } from '@/features/spelling/contexts/SpellingThemeCont
 import { THEME_CONTENT } from '@/features/spelling/constants/theme-content';
 import { computeSpellingDiff, type SpellingDiffResult } from '@/lib/spelling/errors/spelling-diff';
 import { maskWordInSentence, randomizePlaceholderLength } from '@/lib/spelling/mask-sentence';
+import type { PromptMode } from '@/features/spelling/types/session';
 import SpellingErrorDiff from './SpellingErrorDiff';
 import MobileKeyboard from './MobileKeyboard';
+import NoAudioHintPanel from './NoAudioHintPanel';
+import HintFeedback from './HintFeedback';
 
 function useTouchDevice() {
   const [isTouch, setIsTouch] = useState(false);
@@ -40,6 +43,8 @@ interface SpellPromptProps {
   ) => Promise<void>;
   audioUnlocked?: boolean;
   onRequestUnlock?: () => void;
+  kidId?: string;
+  lastAttemptId?: string | null;
 }
 
 const CACHE_NAME = 'hypandra-tts-v1';
@@ -163,6 +168,7 @@ interface TapLettersPanelProps {
   isCorrectMatch: boolean;
   result: SpellPromptResult | null;
   themeContent: ThemeContent;
+  isNoAudioMode?: boolean;
   appendLetter: (letter: string) => void;
   undoLetter: () => void;
   clearAnswer: () => void;
@@ -182,6 +188,7 @@ interface TypedInputPanelProps {
   themeContent: ThemeContent;
   inputRef?: React.RefObject<HTMLInputElement | null>;
   isTouchDevice: boolean;
+  isNoAudioMode?: boolean;
   onUserSpellingChange: (value: string) => void;
   onSubmit: () => void;
   onReplay: () => void;
@@ -249,6 +256,7 @@ function TapLettersPanel({
   isCorrectMatch,
   result,
   themeContent,
+  isNoAudioMode,
   appendLetter,
   undoLetter,
   clearAnswer,
@@ -311,13 +319,15 @@ function TapLettersPanel({
         >
           {themeContent.buttons.clear}
         </button>
-        <button
-          onClick={playWord}
-          disabled={isPlaying}
-          className="px-6 py-3 bg-spelling-accent text-spelling-text rounded-lg text-lg hover:bg-spelling-tertiary disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {themeContent.buttons.replay}
-        </button>
+        {!isNoAudioMode && (
+          <button
+            onClick={playWord}
+            disabled={isPlaying}
+            className="px-6 py-3 bg-spelling-accent text-spelling-text rounded-lg text-lg hover:bg-spelling-tertiary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {themeContent.buttons.replay}
+          </button>
+        )}
         {userSpelling.trim() && (
           <button
             onClick={onSubmit}
@@ -331,10 +341,10 @@ function TapLettersPanel({
       </div>
 
       <div className="text-xs text-center text-spelling-text-muted">
-        Press Space to listen again
+        {isNoAudioMode ? '' : 'Press Space to listen again'}
         {userSpelling.trim() ? (
           <span>
-            {' '}• Press Enter to {requiresCorrectSpelling ? 'continue' : 'check spelling'}
+            {isNoAudioMode ? '' : ' • '}Press Enter to {requiresCorrectSpelling ? 'continue' : 'check spelling'}
           </span>
         ) : null}
       </div>
@@ -356,6 +366,7 @@ function TypedInputPanel({
   themeContent,
   inputRef,
   isTouchDevice,
+  isNoAudioMode,
   onUserSpellingChange,
   onSubmit,
   onReplay,
@@ -463,19 +474,22 @@ function TypedInputPanel({
           onRight={handleMobileRight}
           submitDisabled={submitDisabled}
           replayDisabled={isPlaying}
+          hideReplay={isNoAudioMode}
           submitLabel={submitLabel}
           replayLabel={themeContent.buttons.replay}
         />
       ) : (
         <>
           <div className="flex gap-4 justify-center">
-            <button
-              onClick={onReplay}
-              disabled={isPlaying}
-              className="px-6 py-3 bg-spelling-accent text-spelling-text rounded-lg hover:bg-spelling-tertiary disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {themeContent.buttons.replay}
-            </button>
+            {!isNoAudioMode && (
+              <button
+                onClick={onReplay}
+                disabled={isPlaying}
+                className="px-6 py-3 bg-spelling-accent text-spelling-text rounded-lg hover:bg-spelling-tertiary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {themeContent.buttons.replay}
+              </button>
+            )}
             <button
               onClick={onSubmit}
               disabled={submitDisabled}
@@ -485,7 +499,7 @@ function TypedInputPanel({
             </button>
           </div>
           <div className="text-xs text-center text-spelling-text-muted">
-            Press Space to listen again • Press Enter to {requiresCorrectSpelling ? 'continue' : 'check spelling'}
+            {isNoAudioMode ? '' : 'Press Space to listen again • '}Press Enter to {requiresCorrectSpelling ? 'continue' : 'check spelling'}
           </div>
         </>
       )}
@@ -496,15 +510,16 @@ function TypedInputPanel({
 // Tiny silent MP3 (1 sample) for iOS audio unlock
 const SILENT_MP3 = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRwmHAAAAAAD/+1DEAAAHAAGf9AAAIgAANIAAAARMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7UMQbAAADSAAAAAAAAANIAAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
 
-function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode, audioUnlocked: boolean) {
+function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode, audioUnlocked: boolean, promptMode: PromptMode = 'audio') {
+  const isNoAudio = promptMode === 'no-audio';
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasPlayed, setHasPlayed] = useState(false);
+  const [hasPlayed, setHasPlayed] = useState(isNoAudio);
   const [replayCount, setReplayCount] = useState(0);
-  const [startTime, setStartTime] = useState(0);
+  const [startTime, setStartTime] = useState(isNoAudio ? Date.now() : 0);
   const isPlayingRef = useRef(false);
-  const hasPlayedRef = useRef(false);
+  const hasPlayedRef = useRef(isNoAudio);
   const audioUnlockedRef = useRef(false);
 
   const setPlayingState = useCallback((value: boolean) => {
@@ -518,6 +533,14 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
   }, []);
 
   const resetAudio = useCallback(() => {
+    if (isNoAudio) {
+      setHasPlayedState(true);
+      setReplayCount(0);
+      setStartTime(Date.now());
+      setPlayingState(false);
+      setIsLoading(false);
+      return;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       // Don't nullify - keep the unlocked element for reuse on iOS
@@ -527,7 +550,7 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
     setStartTime(0);
     setPlayingState(false);
     setIsLoading(false);
-  }, [setHasPlayedState, setPlayingState]);
+  }, [isNoAudio, setHasPlayedState, setPlayingState]);
 
   const stopAudio = useCallback(() => {
     if (!audioRef.current) return;
@@ -542,6 +565,7 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
   );
 
   const playWord = useCallback(async () => {
+    if (isNoAudio) return;
     if (isPlayingRef.current) return;
 
     // iOS audio unlock: create Audio element and play silent audio SYNCHRONOUSLY in gesture
@@ -651,10 +675,10 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
 
   useEffect(() => {
     resetAudio();
-    if (audioUnlocked) {
+    if (!isNoAudio && audioUnlocked) {
       void playWordRef.current();
     }
-  }, [promptId, resetAudio, word.id, audioUnlocked]);
+  }, [promptId, resetAudio, word.id, audioUnlocked, isNoAudio]);
 
   useEffect(() => {
     return () => {
@@ -870,10 +894,11 @@ function useSpellPromptSubmission({
   };
 }
 
-export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUnlocked = false, onRequestUnlock }: SpellPromptProps) {
+export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUnlocked = false, onRequestUnlock, kidId, lastAttemptId }: SpellPromptProps) {
   const { theme } = useSpellingTheme();
   const themeContent = THEME_CONTENT[theme];
-  const listenPlaceholder = 'Type the word you heard';
+  const isNoAudioMode = prompt?.prompt_mode === 'no-audio';
+  const listenPlaceholder = isNoAudioMode ? 'Type the word' : 'Type the word you heard';
   const playButtonRef = useRef<HTMLButtonElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const isTouchDevice = useTouchDevice();
@@ -906,7 +931,8 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
     word,
     promptId,
     inputMode,
-    audioUnlocked
+    audioUnlocked,
+    prompt?.prompt_mode ?? 'audio'
   );
   const {
     userSpelling,
@@ -933,12 +959,12 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
   });
 
   useEffect(() => {
-    if (isTapLetters) {
+    if (isTapLetters && !isNoAudioMode) {
       playButtonRef.current?.focus();
       return;
     }
     inputRef.current?.focus();
-  }, [isTapLetters, prompt?.prompt_id, word.id]);
+  }, [isTapLetters, isNoAudioMode, prompt?.prompt_id, word.id]);
 
   useEffect(() => {
     if (result?.correct === false) {
@@ -970,47 +996,60 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
       <div className="text-center space-y-6">
         <div className="text-sm text-spelling-text-muted">Word {wordIndex + 1} of 5</div>
 
-        <button
-          onClick={() => {
-            onRequestUnlock?.();
-            playWord();
-          }}
-          disabled={isPlaying || isLoading}
-          className="text-6xl p-8 bg-spelling-primary text-spelling-surface rounded-full hover:bg-spelling-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="Play word"
-          ref={playButtonRef}
-        >
-          {themeContent.playIcon}
-        </button>
+        {isNoAudioMode ? (
+          <>
+            <p className="text-sm font-semibold text-spelling-text">Read the hints, then spell</p>
+            <NoAudioHintPanel
+              word={word}
+              maskedDefinition={maskedDefinition}
+              maskedSentence={maskedExampleSentence}
+            />
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => {
+                onRequestUnlock?.();
+                playWord();
+              }}
+              disabled={isPlaying || isLoading}
+              className="text-6xl p-8 bg-spelling-primary text-spelling-surface rounded-full hover:bg-spelling-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Play word"
+              ref={playButtonRef}
+            >
+              {themeContent.playIcon}
+            </button>
 
-        <div aria-live="polite" aria-atomic="true" className="sr-only">
-          {isLoading ? 'Loading audio' : isPlaying ? 'Word is playing' : hasPlayed ? 'Ready to spell' : ''}
-        </div>
+            <div aria-live="polite" aria-atomic="true" className="sr-only">
+              {isLoading ? 'Loading audio' : isPlaying ? 'Word is playing' : hasPlayed ? 'Ready to spell' : ''}
+            </div>
 
-        {!hasPlayed && !isLoading && !isPlaying && (
-          <div className="text-sm text-spelling-text-muted" aria-hidden="true">Tap to hear the word</div>
-        )}
-        {isLoading && <div className="text-sm text-spelling-text-muted" aria-hidden="true">Loading...</div>}
-        {isPlaying && <div className="text-sm text-spelling-text-muted" aria-hidden="true">Playing...</div>}
-
-        {(word.definition || word.example_sentence) && (
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-spelling-text">Listen and spell</p>
-            {word.definition && (
-              <p className="text-sm text-spelling-text-muted">{maskedDefinition}</p>
+            {!hasPlayed && !isLoading && !isPlaying && (
+              <div className="text-sm text-spelling-text-muted" aria-hidden="true">Tap to hear the word</div>
             )}
-            {word.example_sentence && (
-              <p className="text-sm text-spelling-text-muted italic whitespace-pre-wrap">
-                "{maskedExampleSentence}"
-              </p>
-            )}
-          </div>
-        )}
+            {isLoading && <div className="text-sm text-spelling-text-muted" aria-hidden="true">Loading...</div>}
+            {isPlaying && <div className="text-sm text-spelling-text-muted" aria-hidden="true">Playing...</div>}
 
-        {replayCount > 0 && !isPlaying && (
-          <div className="text-sm text-spelling-text-muted">
-            Replayed {replayCount} time{replayCount !== 1 ? 's' : ''}
-          </div>
+            {(word.definition || word.example_sentence) && (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-spelling-text">Listen and spell</p>
+                {word.definition && (
+                  <p className="text-sm text-spelling-text-muted">{maskedDefinition}</p>
+                )}
+                {word.example_sentence && (
+                  <p className="text-sm text-spelling-text-muted italic whitespace-pre-wrap">
+                    &ldquo;{maskedExampleSentence}&rdquo;
+                  </p>
+                )}
+              </div>
+            )}
+
+            {replayCount > 0 && !isPlaying && (
+              <div className="text-sm text-spelling-text-muted">
+                Replayed {replayCount} time{replayCount !== 1 ? 's' : ''}
+              </div>
+            )}
+          </>
         )}
 
         {isTapLetters ? (
@@ -1025,6 +1064,7 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
             isCorrectMatch={userSpelling.trim().toLowerCase() === word.word.trim().toLowerCase()}
             result={result}
             themeContent={themeContent}
+            isNoAudioMode={isNoAudioMode}
             appendLetter={appendLetter}
             undoLetter={undoLetter}
             clearAnswer={clearAnswer}
@@ -1044,9 +1084,18 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
             themeContent={themeContent}
             inputRef={inputRef}
             isTouchDevice={isTouchDevice}
+            isNoAudioMode={isNoAudioMode}
             onUserSpellingChange={setUserSpelling}
             onSubmit={handleSubmit}
             onReplay={playWord}
+          />
+        )}
+
+        {isNoAudioMode && result && kidId && (
+          <HintFeedback
+            attemptId={lastAttemptId ?? null}
+            wordId={word.id}
+            kidId={kidId}
           />
         )}
       </div>

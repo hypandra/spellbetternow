@@ -9,12 +9,14 @@ export interface ErrorDetails {
 }
 
 export type InputMode = 'tap_letters' | 'typed';
+export type PromptMode = 'audio' | 'no-audio';
 
 export interface SpellingPromptData {
   prompt_id: string;
   input_mode: InputMode;
   target_length: number;
   letter_tray?: string[];
+  prompt_mode?: PromptMode;
 }
 
 export interface MissedWordData {
@@ -54,6 +56,7 @@ export interface SessionResponse {
   correct?: boolean;
   correctSpelling?: string;
   errorDetails?: ErrorDetails;
+  attemptId?: string;
   attemptsTotal?: number;
   correctTotal?: number;
   miniSetsCompleted?: number;

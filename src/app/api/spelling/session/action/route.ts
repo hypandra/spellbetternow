@@ -11,6 +11,7 @@ import {
 } from '@/lib/spelling/db/session-runners';
 import { acquireSessionLock, releaseSessionLock } from '@/lib/spelling/db/session-locks';
 import { buildPromptData } from '@/lib/spelling/session/prompt';
+import type { PromptMode } from '@/features/spelling/types/session';
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,6 +54,8 @@ export async function POST(request: NextRequest) {
         await saveSessionRunnerState(sessionId, runner.getState());
       }
 
+      const promptMode: PromptMode = runner.getState().promptMode ?? 'audio';
+
       switch (type) {
         case 'PLAY':
           return NextResponse.json({ success: true });
@@ -89,13 +92,14 @@ export async function POST(request: NextRequest) {
           await saveSessionRunnerState(sessionId, runner.getState());
           const nextLevel = runner.getState().currentLevel;
           const nextPrompt = result.nextWord && result.advance !== false
-            ? buildPromptData(result.nextWord, nextLevel)
+            ? buildPromptData(result.nextWord, nextLevel, promptMode)
             : null;
 
           return NextResponse.json({
             correct: result.correct,
             correctSpelling: result.correctSpelling,
             errorDetails: result.errorDetails,
+            attemptId: result.attemptId,
             nextStep: result.nextStep,
             advance: result.advance,
             nextWord: result.nextWord,
@@ -124,7 +128,7 @@ export async function POST(request: NextRequest) {
           const result = await runner.completeMiniSet(action);
           await saveSessionRunnerState(sessionId, runner.getState());
           const nextWordPrompts = result.nextWords.map(word =>
-            buildPromptData(word, result.nextLevel)
+            buildPromptData(word, result.nextLevel, promptMode)
           );
 
           if (

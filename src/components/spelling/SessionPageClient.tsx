@@ -11,7 +11,7 @@ import { useSpellingSession } from '@/features/spelling/hooks/useSpellingSession
 
 function SessionPageContent() {
   const router = useRouter();
-  const { kidId, wordIds, autoStart, assessment } = useSessionParams();
+  const { kidId, wordIds, autoStart, assessment, mode } = useSessionParams();
   const {
     state,
     sessionId,
@@ -23,6 +23,7 @@ function SessionPageContent() {
     finishStats,
     assessmentSuggestedLevel,
     assessmentMaxLevel,
+    lastAttemptId,
     loading,
     error,
     errorMessage,
@@ -32,7 +33,7 @@ function SessionPageContent() {
     handleFinish,
     handleApplyAssessmentLevel,
     clearError,
-  } = useSpellingSession(kidId, { wordIds, autoStart, assessment });
+  } = useSpellingSession(kidId, { wordIds, autoStart, assessment, mode });
 
   if (loading) {
     return <SessionLoading />;
@@ -93,6 +94,7 @@ function SessionPageContent() {
       finishStats={finishStats}
       assessmentSuggestedLevel={assessmentSuggestedLevel}
       assessmentMaxLevel={assessmentMaxLevel}
+      lastAttemptId={lastAttemptId}
       onApplyAssessmentLevel={handleApplyAssessmentLevel}
       onStart={handleStart}
       onSubmit={handleSubmit}
