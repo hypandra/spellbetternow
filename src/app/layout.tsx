@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import Script from "next/script";
 import "./globals.css";
 import SpellingLayoutClient from "@/components/spelling/SpellingLayoutClient";
@@ -14,6 +15,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const doulosSIL = localFont({
+  src: "../../public/fonts/DoulosSIL-Regular.woff2",
+  variable: "--font-doulos-sil",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -32,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${doulosSIL.variable} antialiased`}
         data-spelling-theme="focus"
       >
         <FooterProvider>

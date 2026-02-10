@@ -84,7 +84,7 @@ export default function NoAudioHintPanel({
             </span>
           )}
           {word.ipa && (
-            <span className="inline-block px-2 py-0.5 text-xs font-mono rounded text-spelling-text-muted" title="IPA transcription">
+            <span className="inline-block px-2 py-0.5 text-xs rounded text-spelling-text-muted" style={{ fontFamily: 'var(--font-doulos-sil)' }} title="IPA transcription">
               {word.ipa}
             </span>
           )}
