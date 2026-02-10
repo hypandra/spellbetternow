@@ -18,6 +18,8 @@ export interface Word {
   not_synonyms?: string[];
   letter_fragments?: string[];
   rhyme_hints?: string[];
+  ipa?: string;
+  phonetic?: string;
   is_active: boolean;
   created_at: string;
 }

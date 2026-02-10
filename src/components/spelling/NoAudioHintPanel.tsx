@@ -74,6 +74,22 @@ export default function NoAudioHintPanel({
           ))}
         </div>
       )}
+
+      {(word.phonetic || word.ipa) && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-spelling-text-muted">Sounds like:</span>
+          {word.phonetic && (
+            <span className="inline-block px-2 py-0.5 text-xs font-mono rounded bg-spelling-surface border border-spelling-border border-[style:var(--spelling-border-style)] text-spelling-text">
+              {word.phonetic}
+            </span>
+          )}
+          {word.ipa && (
+            <span className="inline-block px-2 py-0.5 text-xs font-mono rounded text-spelling-text-muted" title="IPA transcription">
+              {word.ipa}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
