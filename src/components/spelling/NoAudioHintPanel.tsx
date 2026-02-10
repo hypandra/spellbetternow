@@ -47,20 +47,6 @@ export default function NoAudioHintPanel({
         </div>
       )}
 
-      {word.letter_fragments && word.letter_fragments.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-spelling-text-muted">Starts/ends:</span>
-          {word.letter_fragments.map((fragment) => (
-            <span
-              key={fragment}
-              className="inline-block px-2 py-0.5 text-xs font-mono rounded bg-spelling-surface border border-spelling-border border-[style:var(--spelling-border-style)] text-spelling-text"
-            >
-              {fragment}
-            </span>
-          ))}
-        </div>
-      )}
-
       {word.rhyme_hints && word.rhyme_hints.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-spelling-text-muted">Rhymes with:</span>
