@@ -32,7 +32,7 @@ export interface BreakData {
   lesson: {
     pattern: string;
     explanation: string;
-    contrast: string;
+    contrast: string[];
     question: string;
     answer: string;
   } | null;

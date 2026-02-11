@@ -13,6 +13,8 @@ import SpellingErrorDiff from './SpellingErrorDiff';
 import MobileKeyboard from './MobileKeyboard';
 import NoAudioHintPanel from './NoAudioHintPanel';
 import HintFeedback from './HintFeedback';
+import WordFeedback from './WordFeedback';
+import AiVoiceIndicator from './AiVoiceIndicator';
 
 function useTouchDevice() {
   const [isTouch, setIsTouch] = useState(false);
@@ -1020,6 +1022,8 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
               {themeContent.playIcon}
             </button>
 
+            <AiVoiceIndicator />
+
             <div aria-live="polite" aria-atomic="true" className="sr-only">
               {isLoading ? 'Loading audio' : isPlaying ? 'Word is playing' : hasPlayed ? 'Ready to spell' : ''}
             </div>
@@ -1093,6 +1097,14 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
 
         {isNoAudioMode && result && kidId && (
           <HintFeedback
+            attemptId={lastAttemptId ?? null}
+            wordId={word.id}
+            kidId={kidId}
+          />
+        )}
+
+        {result && !result.correct && kidId && (
+          <WordFeedback
             attemptId={lastAttemptId ?? null}
             wordId={word.id}
             kidId={kidId}

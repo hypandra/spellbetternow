@@ -109,6 +109,7 @@ export default function StateMachine({
     case 'BREAK':
       return (
         <BreakScreen
+          kidId={kidId}
           breakData={breakData}
           breakMessage={breakMessage}
           onContinue={() => onContinueMiniSet('CONTINUE')}

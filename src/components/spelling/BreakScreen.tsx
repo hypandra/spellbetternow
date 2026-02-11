@@ -4,13 +4,17 @@ import { useMemo } from 'react';
 import { useSpellingTheme } from '@/features/spelling/contexts/SpellingThemeContext';
 import { THEME_CONTENT } from '@/features/spelling/constants/theme-content';
 import SpellingErrorDiff from '@/components/spelling/SpellingErrorDiff';
+import Link from 'next/link';
+import LessonFeedback from '@/components/spelling/LessonFeedback';
 import { computeSpellingDiff } from '@/lib/spelling/errors/spelling-diff';
+import { normalizeContrast } from '@/lib/spelling/lessons/normalize-contrast';
 import type { MissedWordData } from '@/features/spelling/types/session';
 
 interface BreakScreenProps {
+  kidId: string;
   breakData: {
     breakSummary: { correct: string[]; missed: MissedWordData[] };
-    lesson: { pattern: string; explanation: string; contrast: string; question: string; answer: string } | null;
+    lesson: { pattern: string; explanation: string; contrast: string[]; question: string; answer: string } | null;
   } | null;
   breakMessage?: string | null;
   onContinue: () => void;
@@ -21,6 +25,7 @@ interface BreakScreenProps {
 }
 
 export default function BreakScreen({
+  kidId,
   breakData,
   breakMessage,
   onContinue,
@@ -33,6 +38,10 @@ export default function BreakScreen({
   const themeContent = THEME_CONTENT[theme];
   const missedCount = breakData?.breakSummary.missed.length ?? 0;
   const isPerfect = breakData ? missedCount === 0 : false;
+  const lessonContrast = useMemo(
+    () => normalizeContrast(breakData?.lesson?.contrast),
+    [breakData?.lesson?.contrast]
+  );
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -82,14 +91,22 @@ export default function BreakScreen({
               <div className="p-6 bg-spelling-lesson-bg rounded-lg space-y-3 border border-spelling-border" style={{ borderStyle: 'var(--spelling-border-style)' }}>
                 <h3 className="font-medium text-spelling-text">Note</h3>
                 <p className="text-spelling-text">{breakData.lesson.explanation}</p>
-                {breakData.lesson.contrast && (
-                  <p className="text-sm text-spelling-text-muted">{breakData.lesson.contrast}</p>
+                {lessonContrast.length > 0 && (
+                  <div className="text-sm text-spelling-text-muted space-y-1">
+                    {lessonContrast.map((line, index) => (
+                      <div key={`${breakData.lesson.pattern}-contrast-${index}`}>{line}</div>
+                    ))}
+                  </div>
                 )}
                 {breakData.lesson.question && (
                   <p className="text-sm text-spelling-text-muted">
                     {breakData.lesson.question}
                   </p>
                 )}
+                <p className="text-xs text-spelling-text-muted italic">
+                  These tips come from a <Link href="/patterns" className="underline hover:text-spelling-text">curated library</Link> of common spelling patterns.
+                </p>
+                <LessonFeedback kidId={kidId} pattern={breakData.lesson.pattern} />
               </div>
             )}
           </>

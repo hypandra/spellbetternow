@@ -1,11 +1,12 @@
 import { detectPattern, getPatternTemplate } from './patterns';
+import { normalizeContrast } from './normalize-contrast';
 import type { Word } from '../db/words';
 import type { AttemptData } from '../db/sessions';
 
 export interface Lesson {
   pattern: string;
   explanation: string;
-  contrast: string;
+  contrast: string[];
   question: string;
   answer: string;
 }
@@ -33,7 +34,7 @@ export function generateLessonForMiniSet(
     return {
       pattern: 'general',
       explanation: 'Keep practicing these tricky words!',
-      contrast: '',
+      contrast: normalizeContrast(null),
       question: '',
       answer: '',
     };
@@ -44,7 +45,7 @@ export function generateLessonForMiniSet(
     return {
       pattern,
       explanation: 'Keep practicing these tricky words!',
-      contrast: '',
+      contrast: normalizeContrast(null),
       question: '',
       answer: '',
     };
@@ -53,9 +54,8 @@ export function generateLessonForMiniSet(
   return {
     pattern: template.name,
     explanation: template.explanation,
-    contrast: template.contrast,
+    contrast: normalizeContrast(template.contrast),
     question: template.question,
     answer: template.answer,
   };
 }
-

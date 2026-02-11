@@ -20,6 +20,8 @@ import {
   computeSpellingDiff,
   type SpellingDiffResult,
 } from '../errors/spelling-diff';
+import { detectPattern, getPatternTemplate } from '../lessons/patterns';
+import { normalizeContrast } from '../lessons/normalize-contrast';
 
 export interface SessionRunnerState {
   sessionId: string;
@@ -197,7 +199,7 @@ export class SessionRunner {
     lesson?: {
       pattern: string;
       explanation: string;
-      contrast: string;
+      contrast: string[];
       question: string;
       answer: string;
     } | null;
@@ -355,7 +357,7 @@ export class SessionRunner {
     lesson: {
       pattern: string;
       explanation: string;
-      contrast: string;
+      contrast: string[];
       question: string;
       answer: string;
     } | null;
@@ -501,7 +503,7 @@ export class SessionRunner {
   private async generateLesson(missedWords: string[]): Promise<{
     pattern: string;
     explanation: string;
-    contrast: string;
+    contrast: string[];
     question: string;
     answer: string;
   } | null> {
@@ -509,74 +511,22 @@ export class SessionRunner {
       return null;
     }
 
-    const pattern = this.detectPattern(missedWords[0]);
+    const pattern = detectPattern(missedWords[0]);
     if (!pattern) {
       return null;
     }
 
-    return this.getLessonTemplate(pattern);
-  }
-
-  private detectPattern(word: string): string | null {
-    if (word.endsWith('e') && word.length > 3) {
-      return 'silent-e';
+    const template = getPatternTemplate(pattern);
+    if (!template) {
+      return null;
     }
-    if (word.includes('tion') || word.includes('sion')) {
-      return 'tion-sion';
-    }
-    if (this.hasDoubleConsonant(word)) {
-      return 'double-consonant';
-    }
-    return null;
-  }
-
-  private hasDoubleConsonant(word: string): boolean {
-    return /([bcdfghjklmnpqrstvwxyz])\1/.test(word.toLowerCase());
-  }
-
-  private getLessonTemplate(pattern: string): {
-    pattern: string;
-    explanation: string;
-    contrast: string;
-    question: string;
-    answer: string;
-  } {
-    const templates: Record<string, {
-      explanation: string;
-      contrast: string;
-      question: string;
-      answer: string;
-    }> = {
-      'silent-e': {
-        explanation: 'The silent-e changes the vowel sound.',
-        contrast: 'cap → cape, tap → tape',
-        question: 'Which one says /ā/ like "tape"?',
-        answer: 'tape',
-      },
-      'tion-sion': {
-        explanation: 'The -tion and -sion endings sound similar but are spelled differently.',
-        contrast: 'action → /ak-shun/, mission → /mish-un/',
-        question: 'Which ending makes the /shun/ sound?',
-        answer: 'tion',
-      },
-      'double-consonant': {
-        explanation: 'Sometimes we double consonants to keep the vowel sound short.',
-        contrast: 'hop → hopped, tap → tapped',
-        question: 'Why do we double the "p" in "hopped"?',
-        answer: 'To keep the "o" short',
-      },
-    };
-
-    const template = templates[pattern] || {
-      explanation: 'Keep practicing these tricky words!',
-      contrast: '',
-      question: '',
-      answer: '',
-    };
 
     return {
-      pattern,
-      ...template,
+      pattern: template.name,
+      explanation: template.explanation,
+      contrast: normalizeContrast(template.contrast),
+      question: template.question,
+      answer: template.answer,
     };
   }
 }

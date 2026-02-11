@@ -40,7 +40,7 @@ export interface MiniSetSummaryData {
   lesson_json?: {
     pattern: string;
     explanation: string;
-    contrast: string;
+    contrast: string[];
     question: string;
     answer: string;
   };
