@@ -20,8 +20,7 @@ import {
   computeSpellingDiff,
   type SpellingDiffResult,
 } from '../errors/spelling-diff';
-import { detectPattern, getPatternTemplate } from '../lessons/patterns';
-import { normalizeContrast } from '../lessons/normalize-contrast';
+import { generateLessonFromMissedWords, type MissedWord } from '../lessons/generate-lesson';
 
 export interface SessionRunnerState {
   sessionId: string;
@@ -317,7 +316,7 @@ export class SessionRunner {
         }
       }
 
-      const lesson = await this.generateLesson(missedWords.map(m => m.word));
+      const lesson = this.generateLesson(missedWords);
 
       return {
         correct,
@@ -418,7 +417,7 @@ export class SessionRunner {
       }
     }
 
-    const lesson = await this.generateLesson(missedWords.map(m => m.word));
+    const lesson = this.generateLesson(missedWords);
 
     await createMiniSetSummary(this.state.sessionId, {
       index: Math.floor((this.state.attempts.length - 1) / 5),
@@ -500,33 +499,13 @@ export class SessionRunner {
     return nextLevel;
   }
 
-  private async generateLesson(missedWords: string[]): Promise<{
+  private generateLesson(missedWords: MissedWord[]): {
     pattern: string;
     explanation: string;
     contrast: string[];
     question: string;
     answer: string;
-  } | null> {
-    if (missedWords.length === 0) {
-      return null;
-    }
-
-    const pattern = detectPattern(missedWords[0]);
-    if (!pattern) {
-      return null;
-    }
-
-    const template = getPatternTemplate(pattern);
-    if (!template) {
-      return null;
-    }
-
-    return {
-      pattern: template.name,
-      explanation: template.explanation,
-      contrast: normalizeContrast(template.contrast),
-      question: template.question,
-      answer: template.answer,
-    };
+  } | null {
+    return generateLessonFromMissedWords(missedWords);
   }
 }

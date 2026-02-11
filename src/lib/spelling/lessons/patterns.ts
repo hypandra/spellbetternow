@@ -1,9 +1,22 @@
+import { computeSpellingDiff, type DiffOpType } from '../errors/spelling-diff';
+
 export interface PatternDefinition {
   name: string;
   explanation: string;
   contrast: string[];
   question: string;
   answer: string;
+}
+
+export interface PatternMatch {
+  id: string;
+  regions: [number, number][]; // [startIndex, endIndex) in correct word
+}
+
+export interface ErrorAwarePatternResult {
+  pattern: PatternMatch;
+  primaryOpType: DiffOpType;
+  overlapScore: number;
 }
 
 const HOMOPHONE_WORDS = new Set([
@@ -305,4 +318,302 @@ export function detectPattern(word: string): string | null {
   }
 
   return null;
+}
+
+// --- Region-returning detectors ---
+
+/** Find all occurrences of a substring, returning [start, end) ranges */
+function findAllSubstring(word: string, sub: string): [number, number][] {
+  const regions: [number, number][] = [];
+  let pos = 0;
+  while (pos <= word.length - sub.length) {
+    const idx = word.indexOf(sub, pos);
+    if (idx === -1) break;
+    regions.push([idx, idx + sub.length]);
+    pos = idx + 1;
+  }
+  return regions;
+}
+
+/** Find all regex matches, returning [start, end) ranges */
+function findAllRegex(word: string, re: RegExp): [number, number][] {
+  const regions: [number, number][] = [];
+  const global = new RegExp(re.source, 'g');
+  let match;
+  while ((match = global.exec(word)) !== null) {
+    regions.push([match.index, match.index + match[0].length]);
+  }
+  return regions;
+}
+
+type RegionDetector = { id: string; detect: (word: string) => [number, number][] | null };
+
+const PATTERN_REGION_DETECTORS: RegionDetector[] = [
+  {
+    id: 'silent-letters',
+    detect: word => {
+      const m = word.match(/^(kn|wr|gn)/);
+      return m ? [[0, m[1].length]] : null;
+    },
+  },
+  {
+    id: 'qu',
+    detect: word => {
+      const regions = findAllSubstring(word, 'qu');
+      return regions.length > 0 ? regions : null;
+    },
+  },
+  {
+    id: 'dge',
+    detect: word => {
+      if (!word.endsWith('dge')) return null;
+      return [[word.length - 3, word.length]];
+    },
+  },
+  {
+    id: 'ight',
+    detect: word => {
+      const regions = findAllSubstring(word, 'ight');
+      return regions.length > 0 ? regions : null;
+    },
+  },
+  {
+    id: 'ough',
+    detect: word => {
+      const regions = findAllSubstring(word, 'ough');
+      return regions.length > 0 ? regions : null;
+    },
+  },
+  {
+    id: 'tion-sion',
+    detect: word => {
+      const regions = [
+        ...findAllSubstring(word, 'tion'),
+        ...findAllSubstring(word, 'sion'),
+      ];
+      return regions.length > 0 ? regions : null;
+    },
+  },
+  {
+    id: 'able-ible',
+    detect: word => {
+      if (word.endsWith('able')) return [[word.length - 4, word.length]];
+      if (word.endsWith('ible')) return [[word.length - 4, word.length]];
+      return null;
+    },
+  },
+  {
+    id: 'ful-less',
+    detect: word => {
+      if (word.endsWith('ful')) return [[word.length - 3, word.length]];
+      if (word.endsWith('less')) return [[word.length - 4, word.length]];
+      return null;
+    },
+  },
+  {
+    id: 'plural-rules',
+    detect: word => {
+      if (word.endsWith('ies') && word.length > 4) return [[word.length - 3, word.length]];
+      if (word.endsWith('sses')) return [[word.length - 4, word.length]];
+      if (word.endsWith('shes')) return [[word.length - 4, word.length]];
+      if (word.endsWith('ches')) return [[word.length - 4, word.length]];
+      if (word.endsWith('xes')) return [[word.length - 3, word.length]];
+      if (word.endsWith('zes')) return [[word.length - 3, word.length]];
+      return null;
+    },
+  },
+  {
+    id: 'ie-ei',
+    detect: word => {
+      const regions = [
+        ...findAllSubstring(word, 'ie'),
+        ...findAllSubstring(word, 'ei'),
+      ];
+      return regions.length > 0 ? regions : null;
+    },
+  },
+  {
+    id: 'ph-f',
+    detect: word => {
+      const regions = findAllSubstring(word, 'ph');
+      return regions.length > 0 ? regions : null;
+    },
+  },
+  {
+    id: 'ck-ending',
+    detect: word => {
+      if (!word.endsWith('ck')) return null;
+      return [[word.length - 2, word.length]];
+    },
+  },
+  {
+    id: 'ee-ea',
+    detect: word => {
+      const regions = [
+        ...findAllSubstring(word, 'ee'),
+        ...findAllSubstring(word, 'ea'),
+      ];
+      return regions.length > 0 ? regions : null;
+    },
+  },
+  {
+    id: 'ai-ay',
+    detect: word => {
+      const regions = findAllSubstring(word, 'ai');
+      if (word.endsWith('ay')) {
+        regions.push([word.length - 2, word.length]);
+      }
+      return regions.length > 0 ? regions : null;
+    },
+  },
+  {
+    id: 'oa-ow',
+    detect: word => {
+      const regions = findAllSubstring(word, 'oa');
+      if (word.endsWith('ow') && LONG_O_OW_WORDS.has(word)) {
+        regions.push([word.length - 2, word.length]);
+      }
+      return regions.length > 0 ? regions : null;
+    },
+  },
+  {
+    id: 'ou-ow',
+    detect: word => {
+      const regions = findAllSubstring(word, 'ou');
+      if (word.endsWith('ow') && OU_OW_WORDS.has(word)) {
+        regions.push([word.length - 2, word.length]);
+      }
+      return regions.length > 0 ? regions : null;
+    },
+  },
+  {
+    id: 'soft-cg',
+    detect: word => {
+      if (/ck/.test(word)) return null;
+      const regions = findAllRegex(word, /[cg][iey]/);
+      return regions.length > 0 ? regions : null;
+    },
+  },
+  {
+    id: 'homophones',
+    detect: word => {
+      if (!HOMOPHONE_WORDS.has(word)) return null;
+      return [[0, word.length]];
+    },
+  },
+  {
+    id: 'double-consonant',
+    detect: word => {
+      const regions = findAllRegex(word, /([bcdfghjklmnpqrstvwxyz])\1/);
+      return regions.length > 0 ? regions : null;
+    },
+  },
+  {
+    id: 'silent-e',
+    detect: word => {
+      if (word.endsWith('e') && word.length > 3 && !word.endsWith('ee')) {
+        return [[word.length - 1, word.length]];
+      }
+      return null;
+    },
+  },
+];
+
+/** Detect all matching patterns with their character regions */
+export function detectAllPatterns(word: string): PatternMatch[] {
+  const lower = word.toLowerCase();
+  const matches: PatternMatch[] = [];
+
+  for (const detector of PATTERN_REGION_DETECTORS) {
+    const regions = detector.detect(lower);
+    if (regions) {
+      matches.push({ id: detector.id, regions });
+    }
+  }
+
+  return matches;
+}
+
+/** Error-type framing prefixes keyed by diff operation type */
+export const ERROR_TYPE_FRAMING: Record<string, string> = {
+  omission: 'You missed a letter in this pattern.',
+  substitution: 'You used a different letter in this pattern.',
+  transposition: 'The letters in this pattern got swapped.',
+  addition: 'You added an extra letter near this pattern.',
+};
+
+/**
+ * Find the pattern most relevant to the learner's actual errors.
+ * Scores each pattern by how many error positions fall within its regions.
+ */
+export function findErrorAwarePattern(
+  word: string,
+  userSpelling: string
+): ErrorAwarePatternResult | null {
+  const diff = computeSpellingDiff(word, userSpelling);
+
+  // Collect correctIndex positions from error ops
+  const errorPositions: Array<{ index: number; type: DiffOpType }> = [];
+  for (const op of diff.ops) {
+    if (op.type === 'match') continue;
+    if (op.correctIndex != null) {
+      errorPositions.push({ index: op.correctIndex, type: op.type });
+      // Transpositions span 2 chars — also add the next position
+      if (op.type === 'transposition') {
+        errorPositions.push({ index: op.correctIndex + 1, type: op.type });
+      }
+    }
+  }
+
+  if (errorPositions.length === 0) return null;
+
+  const patterns = detectAllPatterns(word);
+  if (patterns.length === 0) return null;
+
+  let bestPattern: PatternMatch | null = null;
+  let bestScore = 0;
+  let bestOpType: DiffOpType = 'substitution';
+
+  for (const pattern of patterns) {
+    let score = 0;
+    const opCounts: Partial<Record<DiffOpType, number>> = {};
+
+    for (const err of errorPositions) {
+      for (const [start, end] of pattern.regions) {
+        if (err.index >= start && err.index < end) {
+          score++;
+          opCounts[err.type] = (opCounts[err.type] ?? 0) + 1;
+          break;
+        }
+      }
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestPattern = pattern;
+      // Find dominant op type in this pattern's region
+      let maxCount = 0;
+      for (const [opType, count] of Object.entries(opCounts)) {
+        if (count > maxCount) {
+          maxCount = count;
+          bestOpType = opType as DiffOpType;
+        }
+      }
+    }
+  }
+
+  // If no pattern has any overlap, fall back to first match (current behavior)
+  if (bestScore === 0) {
+    return {
+      pattern: patterns[0],
+      primaryOpType: errorPositions[0].type,
+      overlapScore: 0,
+    };
+  }
+
+  return {
+    pattern: bestPattern!,
+    primaryOpType: bestOpType,
+    overlapScore: bestScore,
+  };
 }

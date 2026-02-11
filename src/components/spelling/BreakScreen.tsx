@@ -94,7 +94,7 @@ export default function BreakScreen({
                 {lessonContrast.length > 0 && (
                   <div className="text-sm text-spelling-text-muted space-y-1">
                     {lessonContrast.map((line, index) => (
-                      <div key={`${breakData.lesson.pattern}-contrast-${index}`}>{line}</div>
+                      <div key={`${breakData.lesson!.pattern}-contrast-${index}`}>{line}</div>
                     ))}
                   </div>
                 )}
