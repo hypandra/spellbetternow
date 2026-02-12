@@ -38,6 +38,8 @@ export interface SessionRunnerState {
   assessmentMode: boolean;
   maxLevel: number;
   promptMode?: 'audio' | 'no-audio';
+  /** Stores the first incorrect spelling per word for break summary display */
+  retrySpellings?: Record<string, string>;
 }
 
 export class SessionRunner {
@@ -214,8 +216,14 @@ export class SessionRunner {
       ? undefined
       : computeSpellingDiff(word.word, userSpelling.trim());
 
-    // Retry attempts (typed while looking at the answer) are not scored
+    // The break screen should reflect whether the kid knew the word,
+    // not whether they could copy it. Record the miss before returning.
     if (!advance) {
+      if (!correct) {
+        this.upsertMiniSetResult(wordId, false);
+        if (!this.state.retrySpellings) this.state.retrySpellings = {};
+        this.state.retrySpellings[wordId] ??= userSpelling;
+      }
       return {
         correct,
         correctSpelling: word.word,
@@ -310,7 +318,7 @@ export class SessionRunner {
             const attempt = this.state.attempts.find(a => a.word_id === result.wordId && !a.correct);
             missedWords.push({
               word: w.word,
-              userSpelling: attempt?.user_spelling ?? '',
+              userSpelling: attempt?.user_spelling ?? this.state.retrySpellings?.[result.wordId] ?? '',
             });
           }
         }
@@ -408,10 +416,10 @@ export class SessionRunner {
         if (result.correct) {
           correctWords.push(w.word);
         } else {
-          const attempt = [...this.state.attempts].reverse().find(a => a.word_id === result.wordId);
+          const attempt = [...this.state.attempts].reverse().find(a => a.word_id === result.wordId && !a.correct);
           missedWords.push({
             word: w.word,
-            userSpelling: attempt?.user_spelling ?? '',
+            userSpelling: attempt?.user_spelling ?? this.state.retrySpellings?.[result.wordId] ?? '',
           });
         }
       }
