@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SBN Session Review — DEV-1807</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f8f8f8; color: #333; padding: 2rem; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .meta { color: #666; font-size: 0.875rem; margin-bottom: 2rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 1.5rem; }
+  .card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .card img { width: 100%; display: block; cursor: pointer; transition: transform 0.2s; }
+  .card img:hover { transform: scale(1.02); }
+  .card .caption { padding: 0.75rem 1rem; border-top: 1px solid #eee; }
+  .card .caption h3 { font-size: 0.875rem; font-weight: 600; }
+  .card .caption p { font-size: 0.8rem; color: #666; margin-top: 0.25rem; }
+  .tag { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+  .tag-correct { background: #e8f5e9; color: #2e7d32; }
+  .tag-wrong { background: #fce4ec; color: #c62828; }
+  .tag-ui { background: #e3f2fd; color: #1565c0; }
+  .tag-break { background: #fff3e0; color: #e65100; }
+  .notes { margin-top: 2rem; background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .notes h2 { font-size: 1.1rem; margin-bottom: 0.75rem; }
+  .notes ul { padding-left: 1.5rem; }
+  .notes li { margin-bottom: 0.5rem; font-size: 0.9rem; }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; cursor: pointer; justify-content: center; align-items: center; }
+  .overlay img { max-width: 95vw; max-height: 95vh; object-fit: contain; }
+  .overlay.active { display: flex; }
+</style>
+</head>
+<body>
+
+<h1>SBN Session Review — DEV-1807</h1>
+<p class="meta">Custom lists, CSV upload, LLM enrichment, fully custom sessions<br>
+Generated: 2026-02-17 | Branch: daniel/dev-1807-add-custom-spelling-lists-and-one-off-words-to</p>
+
+<div class="grid">
+  <div class="card">
+    <img src="01-word1-prompt.png" alt="Word prompt screen" onclick="enlarge(this)">
+    <div class="caption">
+      <h3><span class="tag tag-ui">UI</span> Word Prompt — "breathing"</h3>
+      <p>Word 1 of 5. Shows definition, example sentence (with word blanked), and text input. Read mode selected.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="02-word1-result.png" alt="Word 2 prompt" onclick="enlarge(this)">
+    <div class="caption">
+      <h3><span class="tag tag-correct">Correct</span> Advanced to Word 2 — "gravy"</h3>
+      <p>After spelling "breathing" correctly, advanced to word 2. Definition: "sauce made from meat juices".</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="03-word2-wrong.png" alt="Error feedback for gravy" onclick="enlarge(this)">
+    <div class="caption">
+      <h3><span class="tag tag-wrong">Wrong</span> Error Feedback — "gravey" vs "gravy"</h3>
+      <p>Letter-by-letter diff shows "Extra letter" — the E in GRAVEY. User must retype correctly to continue.</p>
+    </div>
+  </div>
+</div>
+
+<div class="notes">
+  <h2>API-Driven Session (curl)</h2>
+  <p style="font-size:0.9rem; margin-bottom:0.75rem;">A separate session was driven entirely via curl to verify the API layer:</p>
+  <ul>
+    <li><strong>Words:</strong> err, yield, ceiling, emu, ire (level 3)</li>
+    <li><strong>Results:</strong> 3/5 correct (yield→"yeild", ceiling→"cieling" missed)</li>
+    <li><strong>Lesson generated:</strong> "ie-ei" pattern — "Many words follow the i-before-e rule except after c"</li>
+    <li><strong>Break summary:</strong> correct: [err, emu, ire], missed: [{yield, yeild}, {ceiling, cieling}]</li>
+  </ul>
+
+  <h2 style="margin-top:1.5rem;">Observations</h2>
+  <ul>
+    <li>Error diff works well — clear visual contrast between user spelling and correct spelling</li>
+    <li>"Extra letter" label is accurate and concise</li>
+    <li>Definition + example sentence context helps learners understand the word</li>
+    <li>Break screen not captured here (browser automation friction with retry input clearing)</li>
+    <li>Custom list tables now created; fully custom sessions ready for end-to-end testing with real custom lists</li>
+  </ul>
+
+  <h2 style="margin-top:1.5rem;">Known Gaps</h2>
+  <ul>
+    <li>Break screen screenshot not captured — need better browser automation for retry flows</li>
+    <li>No screenshot of CSV upload or LLM enrichment UX (requires list creation first)</li>
+    <li>Quick-add form on list detail page not captured</li>
+    <li>Migration applied manually — needs to be in the standard push flow</li>
+  </ul>
+</div>
+
+<div class="overlay" id="overlay" onclick="this.classList.remove('active')">
+  <img id="overlayImg" src="" alt="Enlarged screenshot">
+</div>
+
+<script>
+function enlarge(img) {
+  document.getElementById('overlayImg').src = img.src;
+  document.getElementById('overlay').classList.add('active');
+}
+</script>
+</body>
+</html>

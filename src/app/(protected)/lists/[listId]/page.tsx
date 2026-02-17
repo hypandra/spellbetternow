@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { getOptionalUserId } from '@/utils/supabase/roles';
 import SpellingListAssignmentPanel from '@/components/spelling/lists/SpellingListAssignmentPanel';
+import SpellingQuickAddWordForm from '@/components/spelling/lists/SpellingQuickAddWordForm';
 
 type ListItem = {
   id: string;
@@ -106,6 +107,9 @@ export default async function SpellingListDetailPage({
       <div className="mt-8 grid gap-6 lg:grid-cols-[2fr,1fr]">
         <div className="rounded-lg border border-spelling-border bg-spelling-surface p-4">
           <h2 className="text-lg font-semibold text-spelling-text">Words</h2>
+          <div className="mt-4">
+            <SpellingQuickAddWordForm listId={listId} />
+          </div>
           <div className="mt-4 overflow-hidden rounded border border-spelling-border-input">
             <table className="w-full text-sm">
               <thead className="bg-spelling-lesson-bg text-left text-xs uppercase text-spelling-text-muted">

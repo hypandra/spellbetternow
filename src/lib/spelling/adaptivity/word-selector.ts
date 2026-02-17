@@ -1,4 +1,5 @@
 import { getWordsForMiniSetByElo, getEasierWordsByElo, type Word } from '../db/words';
+import { getCustomListWordsForKid } from '../db/custom-lists-db';
 
 export interface WordSelectionResult {
   words: Word[];
@@ -17,13 +18,38 @@ export async function selectMiniSetWords(
     excludeWordIds,
     recentSeenWindowDays
   );
+  const customWords = await getCustomListWordsForKid(kidId);
   
   if (words.length < 5) {
     const additional = await getWordsForMiniSetByElo(targetElo, kidId, excludeWordIds, 0);
     words.push(...additional.slice(0, 5 - words.length));
   }
 
-  return words.slice(0, 5);
+  const wordBankWords = words.slice(0, 5);
+
+  if (customWords.length === 0) {
+    return wordBankWords;
+  }
+
+  const shuffledCustomWords = [...customWords];
+  for (let index = shuffledCustomWords.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledCustomWords[index], shuffledCustomWords[swapIndex]] = [
+      shuffledCustomWords[swapIndex],
+      shuffledCustomWords[index],
+    ];
+  }
+
+  if (shuffledCustomWords.length >= 5) {
+    return shuffledCustomWords.slice(0, 5);
+  }
+
+  const selectedCustomWords = shuffledCustomWords.slice(0, Math.min(shuffledCustomWords.length, 4));
+  const selectedCustomIds = new Set(selectedCustomWords.map(word => word.id));
+  const availableWordBankWords = wordBankWords.filter(word => !selectedCustomIds.has(word.id));
+  const selectedWordBankWords = availableWordBankWords.slice(0, 5 - selectedCustomWords.length);
+
+  return [...selectedCustomWords, ...selectedWordBankWords].slice(0, 5);
 }
 
 export async function applyConfidenceLadder(

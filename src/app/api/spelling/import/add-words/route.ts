@@ -5,9 +5,18 @@ import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { normalizeWord, isValidWordLength } from '@/lib/spelling/custom-lists';
 
+const WordWithMetadataSchema = z.object({
+  word: z.string().min(1),
+  definition: z.string().max(500).optional(),
+  example_sentence: z.string().max(500).optional(),
+  part_of_speech: z.string().max(50).optional(),
+  level: z.number().int().min(1).max(7).optional(),
+  estimated_elo: z.number().int().min(800).max(2200).optional(),
+});
+
 const AddWordsSchema = z.object({
   listId: z.string().uuid(),
-  words: z.array(z.string()).min(1),
+  words: z.array(z.union([z.string(), WordWithMetadataSchema])).min(1),
   sourceText: z.string().optional(),
 });
 
@@ -49,19 +58,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const deduped = new Map<string, string>();
+    type PendingWord = {
+      wordDisplay: string;
+      definition?: string;
+      example_sentence?: string;
+      part_of_speech?: string;
+      level?: number;
+      estimated_elo?: number;
+    };
+    const deduped = new Map<string, PendingWord>();
 
-    for (const rawWord of words) {
-      const display = rawWord.trim();
+    for (const rawEntry of words) {
+      const payloadWord = typeof rawEntry === 'string' ? rawEntry : rawEntry.word;
+      const display = payloadWord.trim();
       if (!display) continue;
 
       const normalized = normalizeWord(display);
       if (!normalized) continue;
       if (!isValidWordLength(normalized)) continue;
 
-      if (!deduped.has(normalized)) {
-        deduped.set(normalized, display);
-      }
+      const existing = deduped.get(normalized);
+      const metadata =
+        typeof rawEntry === 'string'
+          ? {}
+          : {
+              definition: rawEntry.definition?.trim() || undefined,
+              example_sentence: rawEntry.example_sentence?.trim() || undefined,
+              part_of_speech: rawEntry.part_of_speech?.trim() || undefined,
+              level: rawEntry.level,
+              estimated_elo: rawEntry.estimated_elo,
+            };
+
+      deduped.set(normalized, {
+        wordDisplay: existing?.wordDisplay ?? display,
+        definition: existing?.definition ?? metadata.definition,
+        example_sentence: existing?.example_sentence ?? metadata.example_sentence,
+        part_of_speech: existing?.part_of_speech ?? metadata.part_of_speech,
+        level: existing?.level ?? metadata.level,
+        estimated_elo: existing?.estimated_elo ?? metadata.estimated_elo,
+      });
     }
 
     if (deduped.size === 0) {
@@ -84,15 +119,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to store source', details: sourceError }, { status: 500 });
     }
 
-    const payload = Array.from(deduped.entries()).map(([wordText, wordDisplay]) => ({
-      list_id: listId,
-      owner_user_id: session.user.id,
-      source_id: source.id,
-      word_text: wordText,
-      word_display: wordDisplay,
-      is_active: true,
-      created_by_user_id: session.user.id,
-    }));
+    const payload = Array.from(deduped.entries()).map(([wordText, entry]) => {
+      return {
+        list_id: listId,
+        owner_user_id: session.user.id,
+        source_id: source.id,
+        word_text: wordText,
+        word_display: entry.wordDisplay,
+        definition: entry.definition ?? null,
+        example_sentence: entry.example_sentence ?? null,
+        part_of_speech: entry.part_of_speech ?? null,
+        level: entry.level ?? null,
+        estimated_elo: entry.estimated_elo ?? null,
+        is_active: true,
+        created_by_user_id: session.user.id,
+      };
+    });
 
     const { data: items, error: itemsError } = await supabase
       .from('spelling_custom_list_items')

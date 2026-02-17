@@ -2,9 +2,53 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { isValidWordLength, normalizeWord } from '@/lib/spelling/custom-lists';
 
 interface SpellingManualImportFormProps {
   listId: string;
+}
+
+type EnrichedWord = {
+  word: string;
+  definition: string;
+  example_sentence: string;
+  part_of_speech: string;
+  level: number;
+  estimated_elo: number;
+  source: 'word_bank' | 'llm';
+};
+
+function parseSimpleCsv(content: string): string[] {
+  const lines = content
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return [];
+
+  const firstRow = lines[0]
+    .split(',')
+    .map(value => value.trim().replace(/^"+|"+$/g, '').toLowerCase());
+  const hasHeader = firstRow.includes('word') || firstRow.includes('words');
+  const wordColumn = Math.max(0, firstRow.findIndex(value => value === 'word' || value === 'words'));
+
+  const rows = hasHeader ? lines.slice(1) : lines;
+  const seen = new Set<string>();
+  const words: string[] = [];
+
+  for (const row of rows) {
+    const columns = row.split(',');
+    const value = (columns[wordColumn] ?? columns[0] ?? '').trim().replace(/^"+|"+$/g, '');
+    const normalized = normalizeWord(value);
+    if (!normalized) continue;
+    if (!isValidWordLength(normalized)) continue;
+    if (seen.has(normalized)) continue;
+
+    seen.add(normalized);
+    words.push(normalized);
+  }
+
+  return words;
 }
 
 export default function SpellingManualImportForm({ listId }: SpellingManualImportFormProps) {
@@ -12,8 +56,11 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
   const [text, setText] = useState('');
   const [candidates, setCandidates] = useState<string[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [enrichedWords, setEnrichedWords] = useState<EnrichedWord[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isReadingFile, setIsReadingFile] = useState(false);
+  const [isEnriching, setIsEnriching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedWords = useMemo(
@@ -21,31 +68,41 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
     [candidates, selected]
   );
 
+  const extractCandidates = async (textValue: string): Promise<string[] | null> => {
+    const response = await fetch('/api/spelling/import/manual', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: textValue }),
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      setError(payload.error ?? 'Failed to extract candidates.');
+      return null;
+    }
+
+    const payload = (await response.json()) as { candidates?: string[] };
+    return Array.isArray(payload.candidates) ? payload.candidates : [];
+  };
+
+  const setCandidatesAndSelectAll = (words: string[]) => {
+    const nextSelected: Record<string, boolean> = {};
+    for (const word of words) {
+      nextSelected[word] = true;
+    }
+    setCandidates(words);
+    setSelected(nextSelected);
+    setEnrichedWords([]);
+  };
+
   const handleExtract = async () => {
     setError(null);
     setIsExtracting(true);
 
     try {
-      const response = await fetch('/api/spelling/import/manual', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        setError(payload.error ?? 'Failed to extract candidates.');
-        return;
-      }
-
-      const payload = (await response.json()) as { candidates?: string[] };
-      const words = Array.isArray(payload.candidates) ? payload.candidates : [];
-      const nextSelected: Record<string, boolean> = {};
-      for (const word of words) {
-        nextSelected[word] = true;
-      }
-      setCandidates(words);
-      setSelected(nextSelected);
+      const words = await extractCandidates(text);
+      if (!words) return;
+      setCandidatesAndSelectAll(words);
     } catch (err) {
       console.error('[Spelling Manual Import] Error:', err);
       setError('Failed to extract candidates.');
@@ -54,17 +111,96 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setError(null);
+    setIsReadingFile(true);
+
+    try {
+      const content = await file.text();
+      const lowerName = file.name.toLowerCase();
+
+      if (lowerName.endsWith('.csv')) {
+        const words = parseSimpleCsv(content);
+        if (words.length === 0) {
+          setError('No valid words found in CSV.');
+          return;
+        }
+        setCandidatesAndSelectAll(words);
+        setText(content);
+        return;
+      }
+
+      if (lowerName.endsWith('.txt')) {
+        setText(content);
+        const words = await extractCandidates(content);
+        if (!words) return;
+        setCandidatesAndSelectAll(words);
+        return;
+      }
+
+      setError('Unsupported file type. Use .csv or .txt.');
+    } catch (err) {
+      console.error('[Spelling File Upload] Error:', err);
+      setError('Failed to read file.');
+    } finally {
+      setIsReadingFile(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleEnrichSelectedWords = async () => {
+    setError(null);
+    setIsEnriching(true);
+
+    try {
+      const response = await fetch('/api/spelling/import/enrich', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ words: selectedWords }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        setError(payload.error ?? 'Failed to enrich words.');
+        return;
+      }
+
+      const payload = (await response.json()) as { enriched?: EnrichedWord[] };
+      setEnrichedWords(Array.isArray(payload.enriched) ? payload.enriched : []);
+    } catch (err) {
+      console.error('[Spelling Enrich Words] Error:', err);
+      setError('Failed to enrich words.');
+    } finally {
+      setIsEnriching(false);
+    }
+  };
+
   const handleAddWords = async () => {
     setError(null);
     setIsSubmitting(true);
 
     try {
+      const wordsPayload =
+        enrichedWords.length > 0
+          ? enrichedWords.map(item => ({
+              word: item.word,
+              definition: item.definition,
+              example_sentence: item.example_sentence,
+              part_of_speech: item.part_of_speech,
+              level: item.level,
+              estimated_elo: item.estimated_elo,
+            }))
+          : selectedWords;
+
       const response = await fetch('/api/spelling/import/add-words', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           listId,
-          words: selectedWords,
+          words: wordsPayload,
           sourceText: text.trim() || undefined,
         }),
       });
@@ -91,10 +227,46 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
       next[word] = checked;
     }
     setSelected(next);
+    setEnrichedWords([]);
+  };
+
+  const toggleSelectedWord = (word: string, checked: boolean) => {
+    setSelected(current => ({ ...current, [word]: checked }));
+    setEnrichedWords([]);
+  };
+
+  const updateEnrichedDefinition = (word: string, definition: string) => {
+    setEnrichedWords(current =>
+      current.map(item => (item.word === word ? { ...item, definition } : item))
+    );
+  };
+
+  const removeEnrichedWord = (word: string) => {
+    setEnrichedWords(current => current.filter(item => item.word !== word));
+    setCandidates(current => current.filter(item => item !== word));
+    setSelected(current => {
+      const next = { ...current };
+      delete next[word];
+      return next;
+    });
   };
 
   return (
     <div className="space-y-6">
+      <div className="rounded-lg border border-spelling-border bg-spelling-surface p-4">
+        <label className="block text-sm font-medium text-spelling-text">Upload file (.csv or .txt)</label>
+        <input
+          type="file"
+          accept=".csv,.txt,text/plain,text/csv"
+          onChange={handleFileUpload}
+          className="mt-2 block w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-sm text-spelling-text"
+        />
+        <p className="mt-2 text-xs text-spelling-text-muted text-pretty">
+          CSV uses the first column or a column named word/words. TXT supports one word per line or free text.
+        </p>
+        {isReadingFile ? <p className="mt-2 text-xs text-spelling-text-muted">Reading file...</p> : null}
+      </div>
+
       <div className="rounded-lg border border-spelling-border bg-spelling-surface p-4">
         <label className="block text-sm font-medium text-spelling-text">Paste your words</label>
         <textarea
@@ -117,8 +289,8 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
       <div className="rounded-lg border border-spelling-border bg-spelling-surface p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-spelling-text">Preview candidates</h2>
-            <p className="text-sm text-spelling-text-muted">
+            <h2 className="text-lg font-semibold text-spelling-text text-balance">Preview candidates</h2>
+            <p className="text-sm text-spelling-text-muted tabular-nums">
               {candidates.length} candidates, {selectedWords.length} selected
             </p>
           </div>
@@ -148,26 +320,79 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
               <input
                 type="checkbox"
                 checked={Boolean(selected[word])}
-                onChange={event =>
-                  setSelected(current => ({ ...current, [word]: event.target.checked }))
-                }
-                className="h-4 w-4"
+                onChange={event => toggleSelectedWord(word, event.target.checked)}
+                className="size-4"
               />
               {word}
             </label>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={handleAddWords}
-          disabled={selectedWords.length === 0 || isSubmitting}
-          className="mt-4 rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
-        >
-          {isSubmitting ? 'Adding...' : 'Add selected words'}
-        </button>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleEnrichSelectedWords}
+            disabled={selectedWords.length === 0 || isEnriching}
+            className="rounded bg-spelling-secondary px-4 py-2 text-sm font-semibold text-spelling-text hover:bg-spelling-tertiary disabled:opacity-60"
+          >
+            {isEnriching ? 'Enriching...' : 'Enrich selected words'}
+          </button>
+          <button
+            type="button"
+            onClick={handleAddWords}
+            disabled={(selectedWords.length === 0 && enrichedWords.length === 0) || isSubmitting}
+            className="rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
+          >
+            {isSubmitting ? 'Adding...' : 'Add to list'}
+          </button>
+        </div>
       </div>
 
-      {error ? <p className="text-sm text-spelling-error-text">{error}</p> : null}
+      {enrichedWords.length > 0 ? (
+        <div className="rounded-lg border border-spelling-border bg-spelling-surface p-4">
+          <h2 className="text-lg font-semibold text-spelling-text text-balance">Enriched words preview</h2>
+          <div className="mt-4 overflow-x-auto rounded border border-spelling-border-input">
+            <table className="w-full text-sm">
+              <thead className="bg-spelling-lesson-bg text-left text-xs uppercase text-spelling-text-muted">
+                <tr>
+                  <th className="px-3 py-2">Word</th>
+                  <th className="px-3 py-2">Definition</th>
+                  <th className="px-3 py-2">Level</th>
+                  <th className="px-3 py-2">Part of speech</th>
+                  <th className="px-3 py-2">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {enrichedWords.map(item => (
+                  <tr key={item.word} className="border-t border-spelling-border-input">
+                    <td className="px-3 py-2 font-medium text-spelling-text">{item.word}</td>
+                    <td className="px-3 py-2">
+                      <input
+                        value={item.definition}
+                        onChange={event => updateEnrichedDefinition(item.word, event.target.value)}
+                        className="w-full rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-sm text-spelling-text"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-spelling-text tabular-nums">{item.level}</td>
+                    <td className="px-3 py-2 text-spelling-text">{item.part_of_speech || '—'}</td>
+                    <td className="px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => removeEnrichedWord(item.word)}
+                        className="rounded border border-spelling-border-input px-3 py-1 text-xs text-spelling-text"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+
+      {error ? <p className="text-sm text-spelling-error-text text-pretty">{error}</p> : null}
     </div>
   );
 }
