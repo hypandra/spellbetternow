@@ -27,9 +27,9 @@ interface FeedbackRow {
   feedback_text: string | null;
   created_at: string;
   word_id: string;
-  spelling_word_bank?: {
+  spelling_word_bank: {
     word: string;
-  } | null;
+  }[];
 }
 
 async function listUnaddressed() {
@@ -61,7 +61,7 @@ async function listUnaddressed() {
 
   console.log(`\n${data.length} unaddressed feedback entries:\n`);
   for (const row of data as FeedbackRow[]) {
-    const word = row.spelling_word_bank?.word ?? "?";
+    const word = row.spelling_word_bank?.[0]?.word ?? "?";
     const rating = row.rating ? "👍" : "👎";
     const text = row.feedback_text ? ` — "${row.feedback_text}"` : "";
     const date = new Date(row.created_at).toLocaleDateString();
@@ -107,7 +107,7 @@ async function showStats() {
 
   const byWord = new Map<string, { word: string; up: number; down: number }>();
   for (const row of data as FeedbackRow[]) {
-    const word = row.spelling_word_bank?.word ?? "?";
+    const word = row.spelling_word_bank?.[0]?.word ?? "?";
     const existing = byWord.get(row.word_id) ?? { word, up: 0, down: 0 };
     if (row.rating) {
       existing.up++;
