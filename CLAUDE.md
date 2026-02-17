@@ -14,8 +14,22 @@ SpellBetterNow is an adaptive spelling practice app for learners of all ages (ch
 bun dev          # Start dev server (localhost:3000)
 bun build        # Production build
 bun lint         # ESLint
+bun test         # Run tests (bun test runner, NOT full vitest)
 bun start        # Start production server
 ```
+
+### Test Runner Constraints (bun test)
+
+This project uses **bun's built-in test runner**, not full vitest. Key incompatibilities:
+
+- **DO NOT use `vi.hoisted()`** — not supported. Declare mock variables at module top level instead.
+- **DO NOT use `vi.mocked()`** — not supported. Cast with `as ReturnType<typeof vi.fn>`.
+- `vi.mock()`, `vi.fn()`, `vi.clearAllMocks()`, `vi.spyOn()` all work fine.
+- Mock hoisting pattern: declare `const mockFn = vi.fn()` before `vi.mock()`, then reference inside the factory.
+
+### Test Account
+
+For manual/visual testing: `test@spellbetternow.dev` / `test1234` (created via signup API).
 
 ## Architecture
 
