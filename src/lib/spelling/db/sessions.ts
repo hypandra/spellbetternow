@@ -93,7 +93,12 @@ export async function updateSessionState(
   level?: number
 ): Promise<void> {
   const supabase = getSupabaseClient();
-  const updateData: any = {
+  const updateData: {
+    current_word_ids: string[];
+    current_word_index: number;
+    updated_at: string;
+    current_level?: number;
+  } = {
     current_word_ids: wordIds,
     current_word_index: wordIndex,
     updated_at: new Date().toISOString(),

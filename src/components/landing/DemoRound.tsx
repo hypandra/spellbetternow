@@ -173,7 +173,7 @@ export default function DemoRound() {
               </button>
             </div>
             <p className="mt-2 text-xs text-spelling-text-muted italic whitespace-pre-wrap">
-              "{maskWordInSentence(currentWord.usage, currentWord.word, placeholderLength)}"
+              &quot;{maskWordInSentence(currentWord.usage, currentWord.word, placeholderLength)}&quot;
             </p>
           </div>
 

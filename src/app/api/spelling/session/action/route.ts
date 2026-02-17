@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { SessionRunner } from '@/lib/spelling/session/session-runner';
 import { getSessionAttempts, getSessionState } from '@/lib/spelling/db/sessions';
-import { getKid, type Kid } from '@/lib/spelling/db/kids';
+import { getKid } from '@/lib/spelling/db/kids';
 import {
   deleteSessionRunnerState,
   getSessionRunnerState,

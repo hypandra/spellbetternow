@@ -129,7 +129,6 @@ export default function MobileKeyboard({
         <div className="flex justify-center gap-[3px] mb-[3px]">
           <div
             role="none"
-            aria-hidden="true"
             onTouchStart={handleTrackpadTouchStart}
             onTouchMove={handleTrackpadTouchMove}
             onTouchEnd={handleTrackpadTouchEnd}

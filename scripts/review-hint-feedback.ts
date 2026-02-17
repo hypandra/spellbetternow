@@ -9,7 +9,6 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-const DATABASE_URL = process.env.DATABASE_URL;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -21,6 +20,17 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 const [, , command, ...args] = process.argv;
+
+interface FeedbackRow {
+  id: string;
+  rating: boolean | null;
+  feedback_text: string | null;
+  created_at: string;
+  word_id: string;
+  spelling_word_bank?: {
+    word: string;
+  } | null;
+}
 
 async function listUnaddressed() {
   const { data, error } = await supabase
@@ -50,8 +60,8 @@ async function listUnaddressed() {
   }
 
   console.log(`\n${data.length} unaddressed feedback entries:\n`);
-  for (const row of data) {
-    const word = (row as any).spelling_word_bank?.word ?? "?";
+  for (const row of data as FeedbackRow[]) {
+    const word = row.spelling_word_bank?.word ?? "?";
     const rating = row.rating ? "👍" : "👎";
     const text = row.feedback_text ? ` — "${row.feedback_text}"` : "";
     const date = new Date(row.created_at).toLocaleDateString();
@@ -96,8 +106,8 @@ async function showStats() {
   }
 
   const byWord = new Map<string, { word: string; up: number; down: number }>();
-  for (const row of data) {
-    const word = (row as any).spelling_word_bank?.word ?? "?";
+  for (const row of data as FeedbackRow[]) {
+    const word = row.spelling_word_bank?.word ?? "?";
     const existing = byWord.get(row.word_id) ?? { word, up: 0, down: 0 };
     if (row.rating) {
       existing.up++;

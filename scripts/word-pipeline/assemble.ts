@@ -7,8 +7,6 @@
  * Usage: bun scripts/word-pipeline/assemble.ts
  */
 
-import { Glob } from "bun";
-
 const AGENT_OUTPUT_DIR =
   "/private/tmp/claude-501/-Users-dsg-projects-cb-builds-spellbetternow/tasks/";
 const OUTPUT_DIR = new URL("./data/", import.meta.url).pathname;
@@ -23,6 +21,23 @@ interface WordRow {
   leakDetails?: string;
 }
 
+type TranscriptToolInput = {
+  content?: string;
+  command?: string;
+};
+
+type TranscriptContentBlock = {
+  type: string;
+  text?: string;
+  input?: TranscriptToolInput;
+};
+
+type TranscriptJsonLine = {
+  message?: {
+    content?: string | TranscriptContentBlock[];
+  };
+};
+
 /** Extract SQL VALUES lines from agent JSONL transcript */
 async function extractFromTranscript(filePath: string): Promise<string[]> {
   const raw = await Bun.file(filePath).text();
@@ -31,9 +46,9 @@ async function extractFromTranscript(filePath: string): Promise<string[]> {
   // Parse each JSONL line to get text content
   for (const jsonLine of raw.split("\n")) {
     if (!jsonLine.trim()) continue;
-    let parsed: any;
+    let parsed: TranscriptJsonLine;
     try {
-      parsed = JSON.parse(jsonLine);
+      parsed = JSON.parse(jsonLine) as TranscriptJsonLine;
     } catch {
       continue;
     }
@@ -106,55 +121,6 @@ function parseRow(line: string): WordRow | null {
     hasLeak: leaks.length > 0,
     leakDetails: leaks.length > 0 ? leaks.join("; ") : undefined,
   };
-}
-
-/** Get word stems by removing common suffixes */
-function getStems(word: string): string[] {
-  const w = word.toLowerCase();
-  const stems = new Set<string>();
-
-  const suffixes = [
-    "ing",
-    "tion",
-    "sion",
-    "ment",
-    "ness",
-    "ity",
-    "ous",
-    "ive",
-    "ful",
-    "less",
-    "able",
-    "ible",
-    "al",
-    "ly",
-    "er",
-    "or",
-    "ed",
-    "es",
-    "s",
-    "ise",
-    "ize",
-    "ent",
-    "ant",
-    "ence",
-    "ance",
-    "ate",
-  ];
-
-  for (const suffix of suffixes) {
-    if (w.endsWith(suffix) && w.length > suffix.length + 3) {
-      stems.add(w.slice(0, -suffix.length));
-    }
-  }
-
-  // Also add the word itself minus last 2-3 chars as a rough stem
-  if (w.length > 5) {
-    stems.add(w.slice(0, -2));
-    stems.add(w.slice(0, -3));
-  }
-
-  return [...stems];
 }
 
 async function main() {

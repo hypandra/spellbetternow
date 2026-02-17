@@ -23,7 +23,7 @@ export function SessionPageErrorFallback({
           <div className="text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-semibold text-gray-900">Session Error</h2>
           <p className="text-gray-600">
-            Something went wrong with your spelling session. Don't worry, your progress has been
+            Something went wrong with your spelling session. Don&apos;t worry, your progress has been
             saved.
           </p>
           <div className="flex gap-4 justify-center">

@@ -83,7 +83,7 @@ async function main() {
   let wiktCount = 0;
   let llmCount = 0;
 
-  for (const [wordLower, p] of sorted) {
+  for (const [, p] of sorted) {
     const word = escapeSQL(p.word);
     const ipa = escapeSQL(p.ipa);
     const phonetic = escapeSQL(p.phonetic);

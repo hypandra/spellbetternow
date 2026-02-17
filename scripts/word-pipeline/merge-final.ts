@@ -50,6 +50,14 @@ interface WordRow {
   elo: number;
 }
 
+interface LeakyWordRowJson {
+  word: string;
+  level: number;
+  definition: string;
+  example: string;
+  elo: number;
+}
+
 /** Parse fixup agent output (WORD|sentence format) */
 async function parseFixups(): Promise<Map<string, string>> {
   const fixes = new Map<string, string>();
@@ -109,9 +117,9 @@ async function parseCleanMigration(): Promise<WordRow[]> {
 
 /** Read leaky rows */
 async function parseLeakyRows(): Promise<WordRow[]> {
-  const data: any[] = await Bun.file(
+  const data = (await Bun.file(
     `${OUTPUT_DIR}leaky-rows-2026-02-08.json`
-  ).json();
+  ).json()) as LeakyWordRowJson[];
   return data.map((r) => ({
     word: r.word,
     level: r.level,

@@ -14,7 +14,7 @@ function getServiceClient() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {

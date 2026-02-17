@@ -72,7 +72,7 @@ async function deleteUserData(userId: string) {
 }
 
 export const auth = betterAuth({
-  database: pool as any,
+  database: pool as unknown as Parameters<typeof betterAuth>[0]['database'],
   emailAndPassword: {
     enabled: true,
   },

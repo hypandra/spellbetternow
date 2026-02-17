@@ -107,7 +107,7 @@ export function validate(hints: HintResult[]): ValidationResult {
 
     // --- Tier 2: Warnings ---
 
-    if (!VALID_POS.includes(hint.part_of_speech as any)) {
+    if (!VALID_POS.includes(hint.part_of_speech)) {
       issues.push(`POS "${hint.part_of_speech}" not in allowed set`);
     }
 

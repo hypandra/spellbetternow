@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const TEST_URL = 'https://test.supabase.co'
 const TEST_ANON_KEY = 'test-anon-key'

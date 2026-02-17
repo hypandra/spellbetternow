@@ -20,6 +20,8 @@ export default function SpellingErrorDiff({
   correctSpelling,
   userSpelling,
 }: SpellingErrorDiffProps) {
+  void correctSpelling;
+  void userSpelling;
   const errorDescription = getErrorDescription(summary);
 
   return (

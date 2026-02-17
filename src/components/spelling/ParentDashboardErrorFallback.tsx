@@ -19,7 +19,7 @@ export function ParentDashboardErrorFallback({ onRetry }: ParentDashboardErrorFa
               Unable to Load Dashboard
             </h3>
             <p className="text-red-700 mb-4">
-              We couldn't load your dashboard data. This might be a temporary connection issue.
+              We couldn&apos;t load your dashboard data. This might be a temporary connection issue.
             </p>
             <button
               onClick={onRetry}

@@ -32,7 +32,16 @@ function formatDelta(before: number, after: number) {
   return `${sign}${delta}`;
 }
 
-function TooltipContent({ active, payload }: any) {
+interface TooltipPayloadEntry {
+  payload: AttemptPoint;
+}
+
+interface TooltipContentProps {
+  active?: boolean;
+  payload?: TooltipPayloadEntry[];
+}
+
+function TooltipContent({ active, payload }: TooltipContentProps) {
   if (!active || !payload || payload.length === 0) return null;
 
   const attempt = payload[0].payload as AttemptPoint;

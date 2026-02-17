@@ -32,16 +32,6 @@ function isValidCandidate(word: string): boolean {
   return true;
 }
 
-/** Common British spelling patterns to filter */
-const BRITISH_SUFFIXES = [
-  /our$/, // colour → color
-  /ise$/, // realise → realize
-  /isation$/, // realisation → realization
-  /yse$/, // analyse → analyze
-  /ogue$/, // catalogue → catalog
-  /ence$/, // Only flag if American -ense exists
-];
-
 /** Proper nouns that get lowercased in our sources */
 const PROPER_NOUNS = new Set([
   "christian",

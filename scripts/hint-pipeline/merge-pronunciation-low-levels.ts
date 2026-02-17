@@ -7,6 +7,16 @@
 
 const DATA_DIR = new URL('./data/', import.meta.url).pathname;
 
+interface PronunciationWord {
+  word: string;
+  ipa: string;
+  phonetic: string;
+}
+
+interface PronunciationData {
+  words: PronunciationWord[];
+}
+
 function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -36,7 +46,7 @@ async function main() {
   const date = today();
   const jsonPath = `${DATA_DIR}pronunciation-low-levels-${date}.json`;
 
-  const data = await Bun.file(jsonPath).json();
+  const data = (await Bun.file(jsonPath).json()) as PronunciationData;
   const ipaDict = await loadIpaDict();
 
   const lines: string[] = [
@@ -51,7 +61,7 @@ async function main() {
   let dictCount = 0;
   let llmCount = 0;
 
-  const sorted = [...data.words].sort((a: any, b: any) =>
+  const sorted = [...data.words].sort((a, b) =>
     a.word.localeCompare(b.word)
   );
 

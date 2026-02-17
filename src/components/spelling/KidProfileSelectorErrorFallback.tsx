@@ -23,7 +23,7 @@ export function KidProfileSelectorErrorFallback({
               Unable to Load Profiles
             </h3>
             <p className="text-red-700 mb-4">
-              We couldn't load your kid profiles. This might be a temporary connection issue.
+              We couldn&apos;t load your kid profiles. This might be a temporary connection issue.
             </p>
             <button
               onClick={onRetry}
