@@ -20,6 +20,7 @@ const EnrichSchema = z.object({
 });
 
 const MODEL = 'gpt-4o-mini';
+const INVALID_LLM_JSON_ERROR = 'LLM returned invalid JSON — try again';
 
 function toBoundedInteger(value: unknown, min: number, max: number, fallback: number): number {
   const parsed = Number(value);
@@ -89,7 +90,7 @@ async function enrichWithLlm(words: string[]): Promise<EnrichedWord[]> {
         {
           role: 'system',
           content:
-            'You are enriching spelling words for kids. Return only JSON with shape { "enriched": [ ... ] }. For each input word include word, definition (one age-appropriate sentence), example_sentence, part_of_speech, level (1-7), estimated_elo (800-2200).',
+            'You are enriching spelling words for spelling learners. Return only JSON with shape { "enriched": [ ... ] }. For each input word include word, definition (one age-appropriate sentence), example_sentence, part_of_speech, level (1-7), estimated_elo (800-2200).',
         },
         {
           role: 'user',
@@ -113,7 +114,7 @@ async function enrichWithLlm(words: string[]): Promise<EnrichedWord[]> {
     throw new Error('OpenAI response missing content');
   }
 
-  const parsed = JSON.parse(content) as {
+  let parsed: {
     enriched?: Array<{
       word?: unknown;
       definition?: unknown;
@@ -123,6 +124,20 @@ async function enrichWithLlm(words: string[]): Promise<EnrichedWord[]> {
       estimated_elo?: unknown;
     }>;
   };
+  try {
+    parsed = JSON.parse(content) as {
+      enriched?: Array<{
+        word?: unknown;
+        definition?: unknown;
+        example_sentence?: unknown;
+        part_of_speech?: unknown;
+        level?: unknown;
+        estimated_elo?: unknown;
+      }>;
+    };
+  } catch {
+    throw new Error(INVALID_LLM_JSON_ERROR);
+  }
 
   const byWord = new Map<string, EnrichedWord>();
   for (const item of parsed.enriched ?? []) {
@@ -198,7 +213,15 @@ export async function POST(request: Request) {
     }
 
     const novelWords = inputWords.filter(word => !bankByWord.has(word));
-    const llmResults = await enrichWithLlm(novelWords);
+    let llmResults: EnrichedWord[];
+    try {
+      llmResults = await enrichWithLlm(novelWords);
+    } catch (error) {
+      if (error instanceof Error && error.message === INVALID_LLM_JSON_ERROR) {
+        return NextResponse.json({ error: INVALID_LLM_JSON_ERROR }, { status: 502 });
+      }
+      throw error;
+    }
     const llmByWord = new Map(llmResults.map(item => [item.word, item]));
 
     const enriched = inputWords

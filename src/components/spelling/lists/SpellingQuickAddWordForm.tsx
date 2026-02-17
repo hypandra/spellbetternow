@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface SpellingQuickAddWordFormProps {
@@ -11,11 +11,25 @@ export default function SpellingQuickAddWordForm({ listId }: SpellingQuickAddWor
   const router = useRouter();
   const [word, setWord] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!success) return;
+
+    const timeoutId = setTimeout(() => {
+      setSuccess(null);
+    }, 2000);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [success]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    setSuccess(null);
 
     const trimmed = word.trim();
     if (!trimmed) {
@@ -43,6 +57,7 @@ export default function SpellingQuickAddWordForm({ listId }: SpellingQuickAddWor
       }
 
       setWord('');
+      setSuccess('Word added!');
       router.refresh();
     } catch (err) {
       console.error('[Spelling Quick Add Word] Error:', err);
@@ -71,6 +86,7 @@ export default function SpellingQuickAddWordForm({ listId }: SpellingQuickAddWor
         </button>
       </div>
       {error ? <p className="mt-2 text-sm text-spelling-error-text text-pretty">{error}</p> : null}
+      {success ? <p className="mt-2 text-sm text-spelling-text">{success}</p> : null}
     </form>
   );
 }

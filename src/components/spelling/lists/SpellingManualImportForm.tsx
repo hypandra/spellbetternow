@@ -67,6 +67,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
     () => candidates.filter(word => selected[word]),
     [candidates, selected]
   );
+  const isEnrichLimitExceeded = selectedWords.length > 20;
 
   const extractCandidates = async (textValue: string): Promise<string[] | null> => {
     const response = await fetch('/api/spelling/import/manual', {
@@ -232,7 +233,6 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
 
   const toggleSelectedWord = (word: string, checked: boolean) => {
     setSelected(current => ({ ...current, [word]: checked }));
-    setEnrichedWords([]);
   };
 
   const updateEnrichedDefinition = (word: string, definition: string) => {
@@ -312,27 +312,33 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
           </div>
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {candidates.map(word => (
-            <label
-              key={word}
-              className="flex items-center gap-2 rounded border border-spelling-border-input bg-spelling-lesson-bg px-2 py-1 text-sm text-spelling-text"
-            >
-              <input
-                type="checkbox"
-                checked={Boolean(selected[word])}
-                onChange={event => toggleSelectedWord(word, event.target.checked)}
-                className="size-4"
-              />
-              {word}
-            </label>
-          ))}
+          {candidates.length === 0 ? (
+            <p className="text-sm text-spelling-text-muted">
+              Upload a file or paste words above to see candidates here.
+            </p>
+          ) : (
+            candidates.map(word => (
+              <label
+                key={word}
+                className="flex items-center gap-2 rounded border border-spelling-border-input bg-spelling-lesson-bg px-2 py-1 text-sm text-spelling-text"
+              >
+                <input
+                  type="checkbox"
+                  checked={Boolean(selected[word])}
+                  onChange={event => toggleSelectedWord(word, event.target.checked)}
+                  className="size-4"
+                />
+                {word}
+              </label>
+            ))
+          )}
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={handleEnrichSelectedWords}
-            disabled={selectedWords.length === 0 || isEnriching}
+            disabled={selectedWords.length === 0 || isEnriching || isEnrichLimitExceeded}
             className="rounded bg-spelling-secondary px-4 py-2 text-sm font-semibold text-spelling-text hover:bg-spelling-tertiary disabled:opacity-60"
           >
             {isEnriching ? 'Enriching...' : 'Enrich selected words'}
@@ -346,6 +352,9 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
             {isSubmitting ? 'Adding...' : 'Add to list'}
           </button>
         </div>
+        {isEnrichLimitExceeded ? (
+          <p className="mt-2 text-xs text-spelling-text-muted">20 word limit for enrichment</p>
+        ) : null}
       </div>
 
       {enrichedWords.length > 0 ? (
