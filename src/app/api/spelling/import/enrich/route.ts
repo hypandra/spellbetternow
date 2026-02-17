@@ -20,7 +20,7 @@ const EnrichSchema = z.object({
 });
 
 const MODEL = 'gpt-4o-mini';
-const INVALID_LLM_JSON_ERROR = 'LLM returned invalid JSON — try again';
+const ENRICHMENT_FAILED_ERROR = 'Word enrichment failed — please try again';
 
 function toBoundedInteger(value: unknown, min: number, max: number, fallback: number): number {
   const parsed = Number(value);
@@ -136,7 +136,7 @@ async function enrichWithLlm(words: string[]): Promise<EnrichedWord[]> {
       }>;
     };
   } catch {
-    throw new Error(INVALID_LLM_JSON_ERROR);
+    throw new Error(ENRICHMENT_FAILED_ERROR);
   }
 
   const byWord = new Map<string, EnrichedWord>();
@@ -217,8 +217,8 @@ export async function POST(request: Request) {
     try {
       llmResults = await enrichWithLlm(novelWords);
     } catch (error) {
-      if (error instanceof Error && error.message === INVALID_LLM_JSON_ERROR) {
-        return NextResponse.json({ error: INVALID_LLM_JSON_ERROR }, { status: 502 });
+      if (error instanceof Error && error.message === ENRICHMENT_FAILED_ERROR) {
+        return NextResponse.json({ error: ENRICHMENT_FAILED_ERROR }, { status: 502 });
       }
       throw error;
     }
