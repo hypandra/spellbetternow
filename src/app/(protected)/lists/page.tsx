@@ -24,7 +24,7 @@ export default async function SpellingListsPage() {
     : { data: [] };
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
+    <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-spelling-text">Custom spelling lists</h1>

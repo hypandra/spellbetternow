@@ -6,7 +6,7 @@ export default async function SpellingListsNewPage() {
   const userId = await getOptionalUserId();
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10">
+    <div className="mx-auto max-w-6xl px-6 py-10">
       <Link
         href="/lists"
         className="text-sm text-spelling-text-muted hover:text-spelling-text"

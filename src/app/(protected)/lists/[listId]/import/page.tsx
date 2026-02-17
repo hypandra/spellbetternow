@@ -40,7 +40,7 @@ export default async function SpellingListImportPage({
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
+    <div className="mx-auto max-w-6xl px-6 py-10">
       <Link
         href={`/lists/${listId}`}
         className="text-sm text-spelling-text-muted hover:text-spelling-text"
