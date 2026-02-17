@@ -63,7 +63,7 @@ describe('selectMiniSetWords custom list integration', () => {
     expect(result.some(w => w.id === 'cl-1' || w.id === 'cl-2')).toBe(true);
   });
 
-  it('blends custom list words with word bank words based on weight', async () => {
+  it('uses all custom words when at least five custom words are available', async () => {
     const wordBankWords: Word[] = [
       { id: 'wb-1', word: 'canyon', level: 3, current_elo: 1490, is_active: true, created_at: '2026-01-04T00:00:00.000Z' },
       { id: 'wb-2', word: 'thunder', level: 3, current_elo: 1500, is_active: true, created_at: '2026-01-04T00:00:00.000Z' },
@@ -85,8 +85,8 @@ describe('selectMiniSetWords custom list integration', () => {
     const customCount = result.filter(w => w.id.startsWith('cl-')).length;
     const wordBankCount = result.filter(w => w.id.startsWith('wb-')).length;
 
-    expect(customCount).toBeGreaterThanOrEqual(1);
-    expect(wordBankCount).toBeGreaterThanOrEqual(1);
+    expect(customCount).toBe(5);
+    expect(wordBankCount).toBe(0);
     expect(result).toHaveLength(5);
   });
 
@@ -133,6 +133,31 @@ describe('selectMiniSetWords custom list integration', () => {
 
     expect(result.some(w => w.id === 'cl-1')).toBe(true);
     expect(result.some(w => w.id === 'cl-2')).toBe(true);
+  });
+
+  it('returns five custom words when more than five are available', async () => {
+    const wordBankWords: Word[] = [
+      { id: 'wb-1', word: 'anchor', level: 3, current_elo: 1500, is_active: true, created_at: '2026-01-07T00:00:00.000Z' },
+      { id: 'wb-2', word: 'farmer', level: 3, current_elo: 1510, is_active: true, created_at: '2026-01-07T00:00:00.000Z' },
+      { id: 'wb-3', word: 'mountain', level: 3, current_elo: 1490, is_active: true, created_at: '2026-01-07T00:00:00.000Z' },
+      { id: 'wb-4', word: 'kitten', level: 3, current_elo: 1520, is_active: true, created_at: '2026-01-07T00:00:00.000Z' },
+      { id: 'wb-5', word: 'picnic', level: 3, current_elo: 1485, is_active: true, created_at: '2026-01-07T00:00:00.000Z' },
+    ];
+    const customListWords: Word[] = [
+      { id: 'cl-1', word: 'zookeeper', level: 3, current_elo: 1500, is_active: true, created_at: '2026-01-07T00:00:00.000Z' },
+      { id: 'cl-2', word: 'lighthouse', level: 3, current_elo: 1510, is_active: true, created_at: '2026-01-07T00:00:00.000Z' },
+      { id: 'cl-3', word: 'hexagon', level: 3, current_elo: 1510, is_active: true, created_at: '2026-01-07T00:00:00.000Z' },
+      { id: 'cl-4', word: 'harpoon', level: 3, current_elo: 1510, is_active: true, created_at: '2026-01-07T00:00:00.000Z' },
+      { id: 'cl-5', word: 'dolphin', level: 3, current_elo: 1510, is_active: true, created_at: '2026-01-07T00:00:00.000Z' },
+      { id: 'cl-6', word: 'igloo', level: 3, current_elo: 1510, is_active: true, created_at: '2026-01-07T00:00:00.000Z' },
+    ];
+    mockGetWordsForMiniSetByElo.mockResolvedValue(wordBankWords);
+    mockGetCustomListWordsForKid.mockResolvedValue(customListWords);
+
+    const result = await selectMiniSetWords(1500, 'kid-1', []);
+
+    expect(result).toHaveLength(5);
+    expect(result.every(w => w.id.startsWith('cl-'))).toBe(true);
   });
 
   it('prioritizes custom list words that were previously missed', async () => {

@@ -34,7 +34,9 @@ export async function getCustomListWordsForKid(kidId: string): Promise<Word[]> {
   // 2. Get active items from those lists
   const { data: items, error: itemsError } = await supabase
     .from('spelling_custom_list_items')
-    .select('id, list_id, word_text, word_display, is_active, created_at')
+    .select(
+      'id, list_id, word_text, word_display, is_active, created_at, definition, example_sentence, part_of_speech, level, estimated_elo'
+    )
     .in('list_id', listIds)
     .eq('is_active', true);
 
@@ -54,7 +56,7 @@ export async function getCustomListWordsForKid(kidId: string): Promise<Word[]> {
     bankByWord.set(w.word, w as Word);
   }
 
-  // 4. Build Word[] — use bank data if available, otherwise minimal defaults
+  // 4. Build Word[] — use bank data if available, otherwise custom-list metadata
   return items.map(item => {
     const bankWord = bankByWord.get(item.word_text);
     if (bankWord) return bankWord;
@@ -62,8 +64,11 @@ export async function getCustomListWordsForKid(kidId: string): Promise<Word[]> {
     return {
       id: item.id,
       word: item.word_text,
-      level: 3,
-      current_elo: 1500,
+      level: item.level ?? 3,
+      current_elo: item.estimated_elo ?? 1500,
+      definition: item.definition ?? undefined,
+      example_sentence: item.example_sentence ?? undefined,
+      part_of_speech: item.part_of_speech ?? undefined,
       is_active: true,
       created_at: item.created_at,
     } as Word;

@@ -40,23 +40,14 @@ export async function selectMiniSetWords(
     ];
   }
 
-  const preferredCustomCount =
-    shuffledCustomWords.length >= 5
-      ? 4
-      : Math.min(shuffledCustomWords.length, 3);
+  if (shuffledCustomWords.length >= 5) {
+    return shuffledCustomWords.slice(0, 5);
+  }
 
-  const selectedCustomWords = shuffledCustomWords.slice(0, preferredCustomCount);
+  const selectedCustomWords = shuffledCustomWords.slice(0, Math.min(shuffledCustomWords.length, 4));
   const selectedCustomIds = new Set(selectedCustomWords.map(word => word.id));
   const availableWordBankWords = wordBankWords.filter(word => !selectedCustomIds.has(word.id));
   const selectedWordBankWords = availableWordBankWords.slice(0, 5 - selectedCustomWords.length);
-
-  if (selectedWordBankWords.length < 5 - selectedCustomWords.length) {
-    const additionalCustomWords = shuffledCustomWords.slice(
-      preferredCustomCount,
-      preferredCustomCount + (5 - selectedCustomWords.length - selectedWordBankWords.length)
-    );
-    selectedCustomWords.push(...additionalCustomWords);
-  }
 
   return [...selectedCustomWords, ...selectedWordBankWords].slice(0, 5);
 }
