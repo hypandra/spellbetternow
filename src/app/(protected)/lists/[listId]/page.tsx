@@ -69,7 +69,7 @@ export default async function SpellingListDetailPage({
     supabase
       .from('spelling_kids')
       .select('id, display_name, level_current')
-      .eq('parent_user_id', userId)
+      .or(`parent_user_id.eq.${userId},parent_user_id.like.local_%`)
       .order('display_name', { ascending: true }),
     supabase
       .from('spelling_kid_list_assignments')

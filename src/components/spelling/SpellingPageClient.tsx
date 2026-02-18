@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { List } from 'lucide-react';
 import KidProfileSelector from '@/components/spelling/KidProfileSelector';
 import { useSession } from '@/lib/auth-client';
 
@@ -45,14 +46,23 @@ export default function SpellingPageClient() {
             Choose a learner to start a spelling session.
           </p>
         </div>
-        {pathname !== '/settings' && (
+        <div className="flex items-center gap-2">
           <Link
-            href="/settings"
-            className="text-sm px-4 py-2 rounded-full border border-spelling-border text-spelling-text hover:border-spelling-primary"
+            href="/lists"
+            className="inline-flex items-center text-sm px-4 py-2 rounded-full border border-spelling-border text-spelling-text hover:border-spelling-primary"
           >
-            Settings
+            <List className="h-4 w-4 mr-1.5" />
+            Custom lists
           </Link>
-        )}
+          {pathname !== '/settings' && (
+            <Link
+              href="/settings"
+              className="text-sm px-4 py-2 rounded-full border border-spelling-border text-spelling-text hover:border-spelling-primary"
+            >
+              Settings
+            </Link>
+          )}
+        </div>
       </div>
       <p className="text-sm text-spelling-text-muted mb-6">
         Adaptive 5-word sets that adjust to skill level. Letter-by-letter error feedback shows exactly what needs work.
