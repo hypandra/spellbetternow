@@ -61,7 +61,7 @@ export async function POST(
 
     if (
       list.owner_user_id !== session.user.id ||
-      (kid.parent_user_id !== session.user.id && !kid.parent_user_id.startsWith('local_'))
+      kid.parent_user_id !== session.user.id
     ) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -72,10 +72,8 @@ export async function POST(
         {
           list_id: id,
           kid_id: kidId,
-          owner_user_id: session.user.id,
           is_enabled: isEnabled ?? true,
           weight: weight ?? 1,
-          created_by_user_id: session.user.id,
         },
         { onConflict: 'kid_id,list_id' }
       )
