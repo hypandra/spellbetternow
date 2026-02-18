@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import Script from "next/script";
+import { cookies } from "next/headers";
 import "./globals.css";
 import SpellingLayoutClient from "@/components/spelling/SpellingLayoutClient";
 import { FooterProvider } from "@/contexts/FooterContext";
 import { Footer } from "@/components/v3/shared/Footer/Footer";
+import { AGE_GATE_COOKIE_NAME, isAge13Plus } from "@/lib/age-gate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,11 +33,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const canLoadThirdPartyScripts = isAge13Plus(cookieStore.get(AGE_GATE_COOKIE_NAME)?.value);
+
   return (
     <html lang="en">
       <body
@@ -48,13 +53,17 @@ export default function RootLayout({
             <Footer />
           </div>
         </FooterProvider>
-        <Script
-          src="https://hypandra.com/embed/curiosity-badge.js"
-          strategy="lazyOnload"
-          type="module"
-        />
-        {/* @ts-expect-error - Custom element from external script */}
-        <curiosity-badge project="spellbetternow" />
+        {canLoadThirdPartyScripts ? (
+          <>
+            <Script
+              src="https://hypandra.com/embed/curiosity-badge.js"
+              strategy="lazyOnload"
+              type="module"
+            />
+            {/* @ts-expect-error - Custom element from external script */}
+            <curiosity-badge project="spellbetternow" />
+          </>
+        ) : null}
       </body>
     </html>
   );
