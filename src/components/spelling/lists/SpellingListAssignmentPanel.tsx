@@ -93,52 +93,58 @@ export default function SpellingListAssignmentPanel({
       <p className="mt-1 text-sm text-spelling-text-muted">
         Toggle which kids should receive this list and adjust the weight.
       </p>
+      {kids.length === 0 && (
+        <p className="mt-4 text-sm text-spelling-text-muted">
+          No learners found. Add a learner from the dashboard first.
+        </p>
+      )}
       <div className="mt-4 space-y-3">
-        {kids.map(kid => {
-          const assignment = state[kid.id] ?? { isEnabled: false, weight: 1 };
-          const isPending = pendingKidId === kid.id;
+        {kids.length > 0 &&
+          kids.map(kid => {
+            const assignment = state[kid.id] ?? { isEnabled: false, weight: 1 };
+            const isPending = pendingKidId === kid.id;
 
-          return (
-            <div
-              key={kid.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded border border-spelling-border-input bg-spelling-lesson-bg px-3 py-2"
-            >
-              <div>
-                <p className="text-sm font-medium text-spelling-text">{kid.display_name}</p>
-                <p className="text-xs text-spelling-text-muted">
-                  Score {typeof kid.percentile === 'number' ? kid.percentile : '—'}
-                </p>
+            return (
+              <div
+                key={kid.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded border border-spelling-border-input bg-spelling-lesson-bg px-3 py-2"
+              >
+                <div>
+                  <p className="text-sm font-medium text-spelling-text">{kid.display_name}</p>
+                  <p className="text-xs text-spelling-text-muted">
+                    Score {typeof kid.percentile === 'number' ? kid.percentile : '—'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm text-spelling-text">
+                    <input
+                      type="checkbox"
+                      checked={assignment.isEnabled}
+                      onChange={event => handleToggle(kid.id, event.target.checked)}
+                      disabled={isPending}
+                      className="h-4 w-4"
+                    />
+                    Enabled
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-spelling-text">
+                    Weight
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={assignment.weight}
+                      onChange={event => handleWeight(kid.id, event.target.value)}
+                      disabled={isPending}
+                      className="w-16 rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-sm text-spelling-text"
+                    />
+                  </label>
+                  {isPending ? (
+                    <span className="text-xs text-spelling-text-muted">Saving...</span>
+                  ) : null}
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 text-sm text-spelling-text">
-                  <input
-                    type="checkbox"
-                    checked={assignment.isEnabled}
-                    onChange={event => handleToggle(kid.id, event.target.checked)}
-                    disabled={isPending}
-                    className="h-4 w-4"
-                  />
-                  Enabled
-                </label>
-                <label className="flex items-center gap-2 text-sm text-spelling-text">
-                  Weight
-                  <input
-                    type="number"
-                    min={1}
-                    max={10}
-                    value={assignment.weight}
-                    onChange={event => handleWeight(kid.id, event.target.value)}
-                    disabled={isPending}
-                    className="w-16 rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-sm text-spelling-text"
-                  />
-                </label>
-                {isPending ? (
-                  <span className="text-xs text-spelling-text-muted">Saving...</span>
-                ) : null}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
       </div>
       {error ? <p className="mt-3 text-sm text-spelling-error-text">{error}</p> : null}
     </div>

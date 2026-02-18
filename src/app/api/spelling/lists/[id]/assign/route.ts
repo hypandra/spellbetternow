@@ -59,7 +59,10 @@ export async function POST(
       return NextResponse.json({ error: 'List or kid not found' }, { status: 404 });
     }
 
-    if (list.owner_user_id !== session.user.id || kid.parent_user_id !== session.user.id) {
+    if (
+      list.owner_user_id !== session.user.id ||
+      (kid.parent_user_id !== session.user.id && !kid.parent_user_id.startsWith('local_'))
+    ) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
