@@ -59,11 +59,11 @@ export default function SpellingListAssignmentPanel({
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        setError(payload.error ?? 'Failed to update assignment.');
+        setError(payload.error ?? 'Could not save this change. Try again.');
       }
     } catch (err) {
       console.error('[Spelling List Assignment] Error:', err);
-      setError('Failed to update assignment.');
+      setError('Could not save this change. Try again.');
     } finally {
       setPendingKidId(null);
     }
@@ -107,7 +107,7 @@ export default function SpellingListAssignmentPanel({
             return (
               <div
                 key={kid.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded border border-spelling-border-input bg-spelling-lesson-bg px-3 py-2"
+                className="flex min-h-[44px] flex-wrap items-center justify-between gap-3 rounded border border-spelling-border-input bg-spelling-lesson-bg px-3 py-2"
               >
                 <div>
                   <p className="text-sm font-medium text-spelling-text">{kid.display_name}</p>
@@ -116,7 +116,7 @@ export default function SpellingListAssignmentPanel({
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-sm text-spelling-text">
+                  <label className="flex min-h-[44px] items-center gap-2 text-sm text-spelling-text">
                     <input
                       type="checkbox"
                       checked={assignment.isEnabled}
@@ -126,7 +126,7 @@ export default function SpellingListAssignmentPanel({
                     />
                     Enabled
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-spelling-text">
+                  <label className="flex min-h-[44px] items-center gap-2 text-sm text-spelling-text">
                     Weight
                     <input
                       type="number"
@@ -135,7 +135,7 @@ export default function SpellingListAssignmentPanel({
                       value={assignment.weight}
                       onChange={event => handleWeight(kid.id, event.target.value)}
                       disabled={isPending}
-                      className="w-16 rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-sm text-spelling-text"
+                      className="min-h-[44px] w-16 rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-base text-spelling-text"
                     />
                   </label>
                   {isPending ? (

@@ -35,14 +35,20 @@ export default async function SpellingListsPage() {
         {userId ? (
           <Link
             href="/lists/new"
-            className="rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover"
+            className="inline-flex min-h-[44px] items-center rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover"
           >
             New list
           </Link>
         ) : (
-          <span className="rounded border border-dashed border-spelling-border px-4 py-2 text-xs text-spelling-text-muted">
-            Sign in to create lists. TODO: BetterAuth.
-          </span>
+          <div className="rounded border border-dashed border-spelling-border px-4 py-2 text-xs text-spelling-text-muted">
+            <p>Sign in to create lists.</p>
+            <a
+              href="/login"
+              className="mt-2 inline-block text-sm font-medium text-spelling-primary hover:underline"
+            >
+              Sign in
+            </a>
+          </div>
         )}
       </div>
 

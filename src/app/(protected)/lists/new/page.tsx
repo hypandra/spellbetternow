@@ -9,7 +9,7 @@ export default async function SpellingListsNewPage() {
     <div className="mx-auto max-w-6xl px-6 py-10">
       <Link
         href="/lists"
-        className="text-sm text-spelling-text-muted hover:text-spelling-text"
+        className="inline-flex min-h-[44px] items-center text-sm text-spelling-text-muted hover:text-spelling-text"
       >
         ← Back to lists
       </Link>
@@ -22,7 +22,13 @@ export default async function SpellingListsNewPage() {
           <SpellingListCreateForm />
         ) : (
           <div className="rounded border border-dashed border-spelling-border p-4 text-sm text-spelling-text-muted">
-            Sign in to create custom lists. TODO: BetterAuth.
+            <p>Sign in to create a custom list.</p>
+            <a
+              href="/login"
+              className="mt-2 inline-block text-sm font-medium text-spelling-primary hover:underline"
+            >
+              Sign in
+            </a>
           </div>
         )}
       </div>

@@ -39,12 +39,18 @@ export default async function SpellingListDetailPage({
       <div className="mx-auto max-w-3xl px-6 py-10">
         <Link
           href="/lists"
-          className="text-sm text-spelling-text-muted hover:text-spelling-text"
+          className="inline-flex min-h-[44px] items-center text-sm text-spelling-text-muted hover:text-spelling-text"
         >
           ← Back to lists
         </Link>
         <div className="mt-6 rounded border border-dashed border-spelling-border p-4 text-sm text-spelling-text-muted">
-          Sign in to view this list. TODO: BetterAuth.
+          <p>Sign in to view this list.</p>
+          <a
+            href="/login"
+            className="mt-2 inline-block text-sm font-medium text-spelling-primary hover:underline"
+          >
+            Sign in
+          </a>
         </div>
       </div>
     );
@@ -87,7 +93,7 @@ export default async function SpellingListDetailPage({
         <div>
           <Link
             href="/lists"
-            className="text-sm text-spelling-text-muted hover:text-spelling-text"
+            className="inline-flex min-h-[44px] items-center text-sm text-spelling-text-muted hover:text-spelling-text"
           >
             ← Back to lists
           </Link>
@@ -98,7 +104,7 @@ export default async function SpellingListDetailPage({
         </div>
         <Link
           href={`/lists/${listId}/import`}
-          className="rounded bg-spelling-secondary px-4 py-2 text-sm font-semibold text-spelling-text hover:bg-spelling-tertiary"
+          className="inline-flex min-h-[44px] items-center rounded bg-spelling-secondary px-4 py-2 text-sm font-semibold text-spelling-text hover:bg-spelling-tertiary"
         >
           Import words
         </Link>
@@ -110,7 +116,7 @@ export default async function SpellingListDetailPage({
           <div className="mt-4">
             <SpellingQuickAddWordForm listId={listId} />
           </div>
-          <div className="mt-4 overflow-hidden rounded border border-spelling-border-input">
+          <div className="mt-4 overflow-x-auto rounded border border-spelling-border-input">
             <table className="w-full text-sm">
               <thead className="bg-spelling-lesson-bg text-left text-xs uppercase text-spelling-text-muted">
                 <tr>

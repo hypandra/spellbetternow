@@ -86,7 +86,10 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
 
     if (!response.ok) {
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
-      setError(payload.error ?? 'Failed to extract candidates.');
+      setError(
+        payload.error ??
+          'Could not extract words from this text. Try pasting a shorter passage or a simple word list.'
+      );
       return null;
     }
 
@@ -115,7 +118,9 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
       setCandidatesAndSelectAll(words);
     } catch (err) {
       console.error('[Spelling Manual Import] Error:', err);
-      setError('Failed to extract candidates.');
+      setError(
+        'Could not extract words from this text. Try pasting a shorter passage or a simple word list.'
+      );
     } finally {
       setIsExtracting(false);
     }
@@ -154,7 +159,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
       setError('Unsupported file type. Use .csv or .txt.');
     } catch (err) {
       console.error('[Spelling File Upload] Error:', err);
-      setError('Failed to read file.');
+      setError('Could not read this file. Make sure it is a .csv or .txt file and try again.');
     } finally {
       setIsReadingFile(false);
       event.target.value = '';
@@ -174,7 +179,10 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        setError(payload.error ?? 'Failed to enrich words.');
+        setError(
+          payload.error ??
+            'Could not look up word details. Try again or add words without enrichment.'
+        );
         return;
       }
 
@@ -183,7 +191,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
       setLevelFilter(null);
     } catch (err) {
       console.error('[Spelling Enrich Words] Error:', err);
-      setError('Failed to enrich words.');
+      setError('Could not look up word details. Try again or add words without enrichment.');
     } finally {
       setIsEnriching(false);
     }
@@ -218,7 +226,10 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        setError(payload.error ?? 'Failed to add words.');
+        setError(
+          payload.error ??
+            'Could not save words to the list. Try again — your selections are still here.'
+        );
         return;
       }
 
@@ -226,7 +237,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
       router.refresh();
     } catch (err) {
       console.error('[Spelling Add Words] Error:', err);
-      setError('Failed to add words.');
+      setError('Could not save words to the list. Try again — your selections are still here.');
     } finally {
       setIsSubmitting(false);
     }
@@ -270,7 +281,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
           type="file"
           accept=".csv,.txt,text/plain,text/csv"
           onChange={handleFileUpload}
-          className="mt-2 block w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-sm text-spelling-text"
+          className="mt-2 block w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-base text-spelling-text"
         />
         <p className="mt-2 text-xs text-spelling-text-muted text-pretty">
           CSV uses the first column or a column named word/words. TXT supports one word per line or free text.
@@ -283,7 +294,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
         <textarea
           value={text}
           onChange={event => setText(event.target.value)}
-          className="mt-2 w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-sm text-spelling-text"
+          className="mt-2 w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-base text-spelling-text"
           rows={6}
           placeholder="Paste a paragraph or list of words"
         />
@@ -291,7 +302,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
           type="button"
           onClick={handleExtract}
           disabled={isExtracting || !text.trim()}
-          className="mt-3 rounded bg-spelling-secondary px-4 py-2 text-sm font-semibold text-spelling-text hover:bg-spelling-tertiary disabled:opacity-60"
+          className="mt-3 inline-flex min-h-[44px] items-center rounded bg-spelling-secondary px-4 py-2 text-sm font-semibold text-spelling-text hover:bg-spelling-tertiary disabled:opacity-60"
         >
           {isExtracting ? 'Extracting...' : 'Extract candidates'}
         </button>
@@ -312,14 +323,14 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
             <button
               type="button"
               onClick={() => toggleAll(true)}
-              className="rounded border border-spelling-border-input px-3 py-1 text-xs text-spelling-text"
+              className="inline-flex min-h-[44px] items-center rounded border border-spelling-border-input px-3 py-2 text-sm text-spelling-text"
             >
               Select all
             </button>
             <button
               type="button"
               onClick={() => toggleAll(false)}
-              className="rounded border border-spelling-border-input px-3 py-1 text-xs text-spelling-text"
+              className="inline-flex min-h-[44px] items-center rounded border border-spelling-border-input px-3 py-2 text-sm text-spelling-text"
             >
               Clear
             </button>
@@ -334,7 +345,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
             candidates.map(word => (
               <label
                 key={word}
-                className="flex items-center gap-2 rounded border border-spelling-border-input bg-spelling-lesson-bg px-2 py-1 text-sm text-spelling-text"
+                className="flex min-h-[44px] items-center gap-2 rounded border border-spelling-border-input bg-spelling-lesson-bg px-2 py-2 text-sm text-spelling-text"
               >
                 <input
                   type="checkbox"
@@ -353,7 +364,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
             type="button"
             onClick={handleEnrichSelectedWords}
             disabled={selectedWords.length === 0 || isEnriching || isEnrichLimitExceeded}
-            className="rounded bg-spelling-secondary px-4 py-2 text-sm font-semibold text-spelling-text hover:bg-spelling-tertiary disabled:opacity-60"
+            className="inline-flex min-h-[44px] items-center rounded bg-spelling-secondary px-4 py-2 text-sm font-semibold text-spelling-text hover:bg-spelling-tertiary disabled:opacity-60"
           >
             {isEnriching ? 'Enriching...' : 'Enrich selected words'}
           </button>
@@ -365,13 +376,20 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
                 ? filteredEnrichedWords.length === 0
                 : selectedWords.length === 0) || isSubmitting
             }
-            className="rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
+            className="inline-flex min-h-[44px] items-center rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
           >
             {isSubmitting ? 'Adding...' : 'Add to list'}
           </button>
         </div>
         {isEnrichLimitExceeded ? (
-          <p className="mt-2 text-xs text-spelling-text-muted">20 word limit for enrichment</p>
+          <p className="mt-2 text-xs text-spelling-text-muted">
+            Enrichment supports up to 20 words at a time. Deselect some words or add in batches.
+          </p>
+        ) : null}
+        {enrichedWords.length > 0 && filteredEnrichedWords.length === 0 ? (
+          <p className="mt-2 text-sm text-spelling-text-muted">
+            No words match the current level filter. Adjust the filter or select All levels.
+          </p>
         ) : null}
       </div>
 
@@ -395,7 +413,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
                 onChange={event =>
                   setLevelFilter(event.target.value === 'all' ? null : Number(event.target.value))
                 }
-                className="rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-sm text-spelling-text"
+                className="rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-base text-spelling-text"
               >
                 <option value="all">All levels</option>
                 <option value="1">1</option>
@@ -427,7 +445,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
                       <input
                         value={item.definition}
                         onChange={event => updateEnrichedDefinition(item.word, event.target.value)}
-                        className="w-full rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-sm text-spelling-text"
+                        className="w-full rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-base text-spelling-text"
                       />
                     </td>
                     <td className="px-3 py-2 text-spelling-text tabular-nums">{item.level}</td>
@@ -436,7 +454,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
                       <button
                         type="button"
                         onClick={() => removeEnrichedWord(item.word)}
-                        className="rounded border border-spelling-border-input px-3 py-1 text-xs text-spelling-text"
+                        className="inline-flex min-h-[44px] items-center rounded border border-spelling-border-input px-3 py-2 text-xs text-spelling-text"
                       >
                         Remove
                       </button>

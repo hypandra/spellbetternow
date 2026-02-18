@@ -28,7 +28,7 @@ export default function SpellingPageClient() {
           </p>
           <Link
             href="/login"
-            className="mt-4 inline-flex items-center rounded bg-spelling-primary px-4 py-2 text-sm text-spelling-surface hover:bg-spelling-primary-hover transition-colors"
+            className="mt-4 inline-flex min-h-[44px] items-center rounded bg-spelling-primary px-4 py-2 text-sm text-spelling-surface transition-colors hover:bg-spelling-primary-hover"
           >
             Sign in
           </Link>
@@ -49,7 +49,7 @@ export default function SpellingPageClient() {
         <div className="flex items-center gap-2">
           <Link
             href="/lists"
-            className="inline-flex items-center text-sm px-4 py-2 rounded-full border border-spelling-border text-spelling-text hover:border-spelling-primary"
+            className="inline-flex min-h-[44px] items-center rounded-full border border-spelling-border px-4 py-2 text-sm text-spelling-text hover:border-spelling-primary"
           >
             <List className="h-4 w-4 mr-1.5" />
             Custom lists
@@ -57,7 +57,7 @@ export default function SpellingPageClient() {
           {pathname !== '/settings' && (
             <Link
               href="/settings"
-              className="text-sm px-4 py-2 rounded-full border border-spelling-border text-spelling-text hover:border-spelling-primary"
+              className="inline-flex min-h-[44px] items-center rounded-full border border-spelling-border px-4 py-2 text-sm text-spelling-text hover:border-spelling-primary"
             >
               Settings
             </Link>
@@ -71,7 +71,7 @@ export default function SpellingPageClient() {
       <div className="mt-8 pt-6 border-t border-spelling-border">
         <Link
           href="/walkthrough"
-          className="text-sm text-spelling-text-muted hover:text-spelling-text transition-colors"
+          className="inline-flex min-h-[44px] items-center text-sm text-spelling-text-muted transition-colors hover:text-spelling-text"
         >
           How error feedback works
         </Link>

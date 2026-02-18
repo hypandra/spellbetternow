@@ -52,7 +52,7 @@ export default function SpellingQuickAddWordForm({ listId }: SpellingQuickAddWor
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        setError(payload.error ?? 'Failed to add word.');
+        setError(payload.error ?? 'Could not add this word. Check the spelling and try again.');
         return;
       }
 
@@ -61,7 +61,7 @@ export default function SpellingQuickAddWordForm({ listId }: SpellingQuickAddWor
       router.refresh();
     } catch (err) {
       console.error('[Spelling Quick Add Word] Error:', err);
-      setError('Failed to add word.');
+      setError('Could not add this word. Check the spelling and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -75,12 +75,12 @@ export default function SpellingQuickAddWordForm({ listId }: SpellingQuickAddWor
           value={word}
           onChange={event => setWord(event.target.value)}
           placeholder="Enter one word"
-          className="flex-1 rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-sm text-spelling-text"
+          className="flex-1 rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-base text-spelling-text"
         />
         <button
           type="submit"
           disabled={isSubmitting || !word.trim()}
-          className="rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
+          className="inline-flex min-h-[44px] items-center rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
         >
           {isSubmitting ? 'Adding...' : 'Add'}
         </button>

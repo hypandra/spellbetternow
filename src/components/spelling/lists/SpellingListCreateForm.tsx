@@ -34,7 +34,7 @@ export default function SpellingListCreateForm() {
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        setError(payload.error ?? 'Failed to create list.');
+        setError(payload.error ?? 'Could not create the list. Try again.');
         return;
       }
 
@@ -44,11 +44,11 @@ export default function SpellingListCreateForm() {
         router.push(`/lists/${listId}`);
         router.refresh();
       } else {
-        setError('List created, but no ID returned.');
+        setError('Something went wrong creating the list. Try again.');
       }
     } catch (err) {
       console.error('[Spelling List Create] Error:', err);
-      setError('Failed to create list.');
+      setError('Could not create the list. Try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -64,7 +64,7 @@ export default function SpellingListCreateForm() {
         <input
           value={title}
           onChange={event => setTitle(event.target.value)}
-          className="mt-2 w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-sm text-spelling-text"
+          className="mt-2 w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-base text-spelling-text"
           placeholder="e.g. Fall spelling list"
         />
       </div>
@@ -73,7 +73,7 @@ export default function SpellingListCreateForm() {
         <textarea
           value={description}
           onChange={event => setDescription(event.target.value)}
-          className="mt-2 w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-sm text-spelling-text"
+          className="mt-2 w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-base text-spelling-text"
           rows={3}
           placeholder="Optional notes for this list"
         />
@@ -83,7 +83,7 @@ export default function SpellingListCreateForm() {
         <select
           value={scopeType}
           onChange={event => setScopeType(event.target.value)}
-          className="mt-2 w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-sm text-spelling-text"
+          className="mt-2 w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-base text-spelling-text"
         >
           <option value="personal">Personal</option>
           <option value="classroom">Classroom</option>
@@ -93,7 +93,7 @@ export default function SpellingListCreateForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
+        className="inline-flex min-h-[44px] items-center rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
       >
         {isSubmitting ? 'Creating...' : 'Create list'}
       </button>

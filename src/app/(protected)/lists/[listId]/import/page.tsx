@@ -18,12 +18,18 @@ export default async function SpellingListImportPage({
       <div className="mx-auto max-w-3xl px-6 py-10">
         <Link
           href="/lists"
-          className="text-sm text-spelling-text-muted hover:text-spelling-text"
+          className="inline-flex min-h-[44px] items-center text-sm text-spelling-text-muted hover:text-spelling-text"
         >
           ← Back to lists
         </Link>
         <div className="mt-6 rounded border border-dashed border-spelling-border p-4 text-sm text-spelling-text-muted">
-          Sign in to import words. TODO: BetterAuth.
+          <p>Sign in to import words.</p>
+          <a
+            href="/login"
+            className="mt-2 inline-block text-sm font-medium text-spelling-primary hover:underline"
+          >
+            Sign in
+          </a>
         </div>
       </div>
     );
@@ -43,7 +49,7 @@ export default async function SpellingListImportPage({
     <div className="mx-auto max-w-6xl px-6 py-10">
       <Link
         href={`/lists/${listId}`}
-        className="text-sm text-spelling-text-muted hover:text-spelling-text"
+        className="inline-flex min-h-[44px] items-center text-sm text-spelling-text-muted hover:text-spelling-text"
       >
         ← Back to list
       </Link>
