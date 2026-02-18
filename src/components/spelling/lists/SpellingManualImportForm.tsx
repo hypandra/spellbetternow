@@ -57,6 +57,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
   const [candidates, setCandidates] = useState<string[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [enrichedWords, setEnrichedWords] = useState<EnrichedWord[]>([]);
+  const [levelFilter, setLevelFilter] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isReadingFile, setIsReadingFile] = useState(false);
@@ -68,6 +69,13 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
     [candidates, selected]
   );
   const isEnrichLimitExceeded = selectedWords.length > 20;
+  const filteredEnrichedWords = useMemo(
+    () =>
+      levelFilter === null
+        ? enrichedWords
+        : enrichedWords.filter(item => item.level >= levelFilter),
+    [enrichedWords, levelFilter]
+  );
 
   const extractCandidates = async (textValue: string): Promise<string[] | null> => {
     const response = await fetch('/api/spelling/import/manual', {
@@ -94,6 +102,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
     setCandidates(words);
     setSelected(nextSelected);
     setEnrichedWords([]);
+    setLevelFilter(null);
   };
 
   const handleExtract = async () => {
@@ -171,6 +180,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
 
       const payload = (await response.json()) as { enriched?: EnrichedWord[] };
       setEnrichedWords(Array.isArray(payload.enriched) ? payload.enriched : []);
+      setLevelFilter(null);
     } catch (err) {
       console.error('[Spelling Enrich Words] Error:', err);
       setError('Failed to enrich words.');
@@ -186,7 +196,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
     try {
       const wordsPayload =
         enrichedWords.length > 0
-          ? enrichedWords.map(item => ({
+          ? filteredEnrichedWords.map(item => ({
               word: item.word,
               definition: item.definition,
               example_sentence: item.example_sentence,
@@ -229,6 +239,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
     }
     setSelected(next);
     setEnrichedWords([]);
+    setLevelFilter(null);
   };
 
   const toggleSelectedWord = (word: string, checked: boolean) => {
@@ -292,6 +303,9 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
             <h2 className="text-lg font-semibold text-spelling-text text-balance">Preview candidates</h2>
             <p className="text-sm text-spelling-text-muted tabular-nums">
               {candidates.length} candidates, {selectedWords.length} selected
+              {levelFilter !== null && enrichedWords.length > 0
+                ? ` (showing ${filteredEnrichedWords.length} at level ${levelFilter}+)`
+                : ''}
             </p>
           </div>
           <div className="flex gap-2">
@@ -346,7 +360,11 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
           <button
             type="button"
             onClick={handleAddWords}
-            disabled={(selectedWords.length === 0 && enrichedWords.length === 0) || isSubmitting}
+            disabled={
+              (enrichedWords.length > 0
+                ? filteredEnrichedWords.length === 0
+                : selectedWords.length === 0) || isSubmitting
+            }
             className="rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
           >
             {isSubmitting ? 'Adding...' : 'Add to list'}
@@ -359,7 +377,37 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
 
       {enrichedWords.length > 0 ? (
         <div className="rounded-lg border border-spelling-border bg-spelling-surface p-4">
-          <h2 className="text-lg font-semibold text-spelling-text text-balance">Enriched words preview</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-spelling-text text-balance">
+                Enriched words preview
+              </h2>
+              {levelFilter !== null && (
+                <p className="text-sm text-spelling-text-muted tabular-nums">
+                  Showing {filteredEnrichedWords.length} of {enrichedWords.length} words at level {levelFilter}+
+                </p>
+              )}
+            </div>
+            <label className="flex items-center gap-2 text-sm font-medium text-spelling-text">
+              Show words at or above level
+              <select
+                value={levelFilter === null ? 'all' : String(levelFilter)}
+                onChange={event =>
+                  setLevelFilter(event.target.value === 'all' ? null : Number(event.target.value))
+                }
+                className="rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-sm text-spelling-text"
+              >
+                <option value="all">All levels</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+              </select>
+            </label>
+          </div>
           <div className="mt-4 overflow-x-auto rounded border border-spelling-border-input">
             <table className="w-full text-sm">
               <thead className="bg-spelling-lesson-bg text-left text-xs uppercase text-spelling-text-muted">
@@ -372,7 +420,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
                 </tr>
               </thead>
               <tbody>
-                {enrichedWords.map(item => (
+                {filteredEnrichedWords.map(item => (
                   <tr key={item.word} className="border-t border-spelling-border-input">
                     <td className="px-3 py-2 font-medium text-spelling-text">{item.word}</td>
                     <td className="px-3 py-2">
