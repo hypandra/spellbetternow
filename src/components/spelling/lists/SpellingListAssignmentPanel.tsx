@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
-type Kid = {
+type Learner = {
   id: string;
   display_name: string;
   level_current: number;
@@ -22,13 +22,13 @@ type AssignmentState = {
 
 interface SpellingListAssignmentPanelProps {
   listId: string;
-  kids: Kid[];
+  learners: Learner[];
   assignments: Assignment[];
 }
 
 export default function SpellingListAssignmentPanel({
   listId,
-  kids,
+  learners,
   assignments,
 }: SpellingListAssignmentPanelProps) {
   const initialAssignments = useMemo(() => {
@@ -89,18 +89,18 @@ export default function SpellingListAssignmentPanel({
 
   return (
     <div className="rounded-lg border border-spelling-border bg-spelling-surface p-4">
-      <h2 className="text-lg font-semibold text-spelling-text">Assign to kids</h2>
+      <h2 className="text-lg font-semibold text-spelling-text">Assign to learners</h2>
       <p className="mt-1 text-sm text-spelling-text-muted">
-        Toggle which kids should receive this list and adjust the weight.
+        Toggle which learners should receive this list and adjust the weight.
       </p>
-      {kids.length === 0 && (
+      {learners.length === 0 && (
         <p className="mt-4 text-sm text-spelling-text-muted">
           No learners found. Add a learner from the dashboard first.
         </p>
       )}
       <div className="mt-4 space-y-3">
-        {kids.length > 0 &&
-          kids.map(kid => {
+        {learners.length > 0 &&
+          learners.map(kid => {
             const assignment = state[kid.id] ?? { isEnabled: false, weight: 1 };
             const isPending = pendingKidId === kid.id;
 

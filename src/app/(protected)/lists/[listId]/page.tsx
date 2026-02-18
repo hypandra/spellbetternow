@@ -13,7 +13,7 @@ type ListItem = {
   created_at: string;
 };
 
-type Kid = {
+type Learner = {
   id: string;
   display_name: string;
   level_current: number;
@@ -66,7 +66,7 @@ export default async function SpellingListDetailPage({
     notFound();
   }
 
-  const [{ data: items }, { data: kids }, { data: assignments }] = (await Promise.all([
+  const [{ data: items }, { data: learners }, { data: assignments }] = (await Promise.all([
     supabase
       .from('spelling_custom_list_items')
       .select('id, word_text, word_display, is_active, created_at')
@@ -75,7 +75,7 @@ export default async function SpellingListDetailPage({
     supabase
       .from('spelling_kids')
       .select('id, display_name, level_current')
-      .or(`parent_user_id.eq.${userId},parent_user_id.like.local_%`)
+      .eq('parent_user_id', userId)
       .order('display_name', { ascending: true }),
     supabase
       .from('spelling_kid_list_assignments')
@@ -83,7 +83,7 @@ export default async function SpellingListDetailPage({
       .eq('list_id', listId),
   ])) as [
     { data: ListItem[] | null },
-    { data: Kid[] | null },
+    { data: Learner[] | null },
     { data: Assignment[] | null },
   ];
 
@@ -148,7 +148,7 @@ export default async function SpellingListDetailPage({
         <div>
           <SpellingListAssignmentPanel
             listId={listId}
-            kids={kids ?? []}
+            learners={learners ?? []}
             assignments={assignments ?? []}
           />
         </div>
