@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { normalizeWord, isValidWordLength } from '@/lib/spelling/custom-lists';
+
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 const WordWithMetadataSchema = z.object({
   word: z.string().min(1),
@@ -26,7 +33,7 @@ export async function POST(request: Request) {
     if (!session?.user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
-    const supabase = await createClient();
+    const supabase = getServiceClient();
 
     const body: unknown = await request.json().catch(() => null);
     const parsed = AddWordsSchema.safeParse(body);

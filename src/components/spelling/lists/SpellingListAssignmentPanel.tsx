@@ -92,6 +92,7 @@ export default function SpellingListAssignmentPanel({
       <h2 className="text-lg font-semibold text-spelling-text">Assign to learners</h2>
       <p className="mt-1 text-sm text-spelling-text-muted">
         Toggle which learners should receive this list and adjust the weight.
+        Higher weight (1–10) means words from this list appear more often in practice.
       </p>
       {learners.length === 0 && (
         <p className="mt-4 text-sm text-spelling-text-muted">

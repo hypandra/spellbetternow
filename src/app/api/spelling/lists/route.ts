@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
+
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 const CreateListSchema = z.object({
   title: z.string().min(1).max(120),
@@ -19,7 +26,7 @@ export async function GET() {
     if (!session?.user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
-    const supabase = await createClient();
+    const supabase = getServiceClient();
 
     const { data, error } = await supabase
       .from('spelling_custom_lists')
@@ -44,7 +51,7 @@ export async function POST(request: Request) {
     if (!session?.user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
-    const supabase = await createClient();
+    const supabase = getServiceClient();
 
     const body: unknown = await request.json().catch(() => null);
     const parsed = CreateListSchema.safeParse(body);

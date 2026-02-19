@@ -1,6 +1,13 @@
 import Link from 'next/link';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { getOptionalUserId } from '@/utils/supabase/roles';
+
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 type SpellingList = {
   id: string;
@@ -12,7 +19,7 @@ type SpellingList = {
 };
 
 export default async function SpellingListsPage() {
-  const supabase = await createClient();
+  const supabase = getServiceClient();
   const userId = await getOptionalUserId();
 
   const { data: lists } = userId
