@@ -6,6 +6,10 @@ import Link from 'next/link';
 import { SpellingErrorBoundary } from './SpellingErrorBoundary';
 import { KidProfileSelectorErrorFallback } from './KidProfileSelectorErrorFallback';
 import type { Kid } from '@/lib/spelling/db/kids';
+
+type KidWithLists = Kid & {
+  assignedLists?: Array<{ id: string; title: string }>;
+};
 import { useSpellingTheme } from '@/features/spelling/contexts/SpellingThemeContext';
 import { THEME_CONTENT } from '@/features/spelling/constants/theme-content';
 
@@ -16,7 +20,7 @@ interface KidProfileSelectorProps {
 function KidProfileSelectorContent({ parentUserId }: KidProfileSelectorProps) {
   const { theme } = useSpellingTheme();
   const themeContent = THEME_CONTENT[theme];
-  const [kids, setKids] = useState<Kid[]>([]);
+  const [kids, setKids] = useState<KidWithLists[]>([]);
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -48,7 +52,7 @@ function KidProfileSelectorContent({ parentUserId }: KidProfileSelectorProps) {
         throw new Error(errorMsg);
       }
 
-      const payload = (await response.json()) as { kids?: Kid[] };
+      const payload = (await response.json()) as { kids?: KidWithLists[] };
       const nextKids = payload.kids ?? [];
       setKids(nextKids);
       setLoading(false);
@@ -207,6 +211,23 @@ function KidProfileSelectorContent({ parentUserId }: KidProfileSelectorProps) {
             >
               {themeContent.buttons.startSession}
             </button>
+            {kid.assignedLists && kid.assignedLists.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {kid.assignedLists.map(list => (
+                  <button
+                    key={list.id}
+                    onClick={() =>
+                      router.push(
+                        `/session?kidId=${kid.id}&listId=${list.id}&autoStart=1`
+                      )
+                    }
+                    className="w-full px-4 py-2 text-sm bg-spelling-secondary text-spelling-text rounded hover:bg-spelling-tertiary transition-colors text-left"
+                  >
+                    Study: {list.title}
+                  </button>
+                ))}
+              </div>
+            )}
             <Link
               href={`/progress?kidId=${kid.id}`}
               className="mt-2 block w-full px-4 py-2 bg-spelling-secondary text-spelling-text rounded hover:bg-spelling-tertiary transition-colors text-center"

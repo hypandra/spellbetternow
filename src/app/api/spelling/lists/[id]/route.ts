@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
+
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 export async function GET(
   _request: Request,
@@ -13,7 +20,7 @@ export async function GET(
     if (!session?.user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
-    const supabase = await createClient();
+    const supabase = getServiceClient();
 
     const { data: list, error: listError } = await supabase
       .from('spelling_custom_lists')

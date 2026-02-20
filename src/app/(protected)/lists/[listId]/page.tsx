@@ -1,9 +1,16 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { getOptionalUserId } from '@/utils/supabase/roles';
 import SpellingListAssignmentPanel from '@/components/spelling/lists/SpellingListAssignmentPanel';
 import SpellingQuickAddWordForm from '@/components/spelling/lists/SpellingQuickAddWordForm';
+
+function getServiceClient() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 type ListItem = {
   id: string;
@@ -31,7 +38,7 @@ export default async function SpellingListDetailPage({
   params: Promise<{ listId: string }>;
 }) {
   const { listId } = await params;
-  const supabase = await createClient();
+  const supabase = getServiceClient();
   const userId = await getOptionalUserId();
 
   if (!userId) {

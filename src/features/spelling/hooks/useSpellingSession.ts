@@ -55,7 +55,7 @@ interface UseSpellingSessionResult {
 
 export function useSpellingSession(
   kidId: string | null,
-  options?: { wordIds?: string[]; autoStart?: boolean; assessment?: boolean; mode?: PromptMode }
+  options?: { wordIds?: string[]; autoStart?: boolean; assessment?: boolean; mode?: PromptMode; listId?: string }
 ): UseSpellingSessionResult {
   const [state, setState] = useState<SessionState>('START');
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -119,6 +119,7 @@ export function useSpellingSession(
       const data = await SpellingSessionClient.start(kidId, wordIds, {
         assessment: assessmentMode,
         mode: options?.mode,
+        listId: options?.listId,
       });
 
       if (data.error) {

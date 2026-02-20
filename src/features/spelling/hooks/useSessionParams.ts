@@ -10,6 +10,7 @@ export function useSessionParams() {
   const modeParam = searchParams.get('mode');
   const mode: PromptMode | undefined =
     modeParam === 'no-audio' ? 'no-audio' : modeParam === 'audio' ? 'audio' : undefined;
+  const listId = searchParams.get('listId') ?? undefined;
   const wordIds =
     wordIdsParam
       ?.split(',')
@@ -17,5 +18,5 @@ export function useSessionParams() {
       .filter(Boolean)
       .slice(0, 5) ?? [];
 
-  return { kidId, wordIds, autoStart, assessment, mode };
+  return { kidId, wordIds, autoStart, assessment, mode, listId };
 }

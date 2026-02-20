@@ -33,10 +33,35 @@ export async function GET() {
     }
 
     const kids = data ?? [];
+    const kidIds = kids.map(k => k.id);
+
+    // Fetch assigned lists for all kids in one query
+    const assignedListsByKid: Record<string, Array<{ id: string; title: string }>> = {};
+    if (kidIds.length > 0) {
+      const { data: assignments } = await supabase
+        .from('spelling_kid_list_assignments')
+        .select('kid_id, list_id, spelling_custom_lists(id, title)')
+        .in('kid_id', kidIds)
+        .eq('is_enabled', true);
+
+      if (assignments) {
+        for (const a of assignments) {
+          const list = a.spelling_custom_lists as unknown as { id: string; title: string } | null;
+          if (!list) continue;
+          if (!assignedListsByKid[a.kid_id]) assignedListsByKid[a.kid_id] = [];
+          assignedListsByKid[a.kid_id].push({ id: list.id, title: list.title });
+        }
+      }
+    }
+
     const withPercentiles = await Promise.all(
       kids.map(async kid => {
         const percentile = await getKidPercentile(kid.id);
-        return { ...kid, percentile: Math.round(percentile * 100) };
+        return {
+          ...kid,
+          percentile: Math.round(percentile * 100),
+          assignedLists: assignedListsByKid[kid.id] ?? [],
+        };
       })
     );
 
