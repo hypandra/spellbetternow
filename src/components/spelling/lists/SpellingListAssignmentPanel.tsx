@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type Learner = {
   id: string;
@@ -42,6 +43,7 @@ export default function SpellingListAssignmentPanel({
     return map;
   }, [assignments]);
 
+  const router = useRouter();
   const [state, setState] = useState<Record<string, AssignmentState>>(initialAssignments);
   const [pendingKidId, setPendingKidId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -142,6 +144,16 @@ export default function SpellingListAssignmentPanel({
                   {isPending ? (
                     <span className="text-xs text-spelling-text-muted">Saving...</span>
                   ) : null}
+                  {assignment.isEnabled && !isPending && (
+                    <button
+                      onClick={() =>
+                        router.push(`/session?kidId=${kid.id}&listId=${listId}&autoStart=1`)
+                      }
+                      className="min-h-[44px] rounded bg-spelling-primary px-3 py-1 text-sm text-spelling-surface hover:bg-spelling-primary-hover transition-colors"
+                    >
+                      Study
+                    </button>
+                  )}
                 </div>
               </div>
             );

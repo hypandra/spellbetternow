@@ -12,6 +12,55 @@ function getSupabaseClient() {
 }
 
 /**
+ * Get all active words for a specific list.
+ * Looks up each word in spelling_word_bank for full metadata;
+ * words not in the bank get minimal defaults from list item metadata.
+ */
+export async function getWordsForList(listId: string): Promise<Word[]> {
+  const supabase = getSupabaseClient();
+
+  const { data: items, error: itemsError } = await supabase
+    .from('spelling_custom_list_items')
+    .select(
+      'id, list_id, word_text, word_display, is_active, created_at, definition, example_sentence, part_of_speech, level, estimated_elo'
+    )
+    .eq('list_id', listId)
+    .eq('is_active', true);
+
+  if (itemsError) throw itemsError;
+  if (!items || items.length === 0) return [];
+
+  const wordTexts = items.map(item => item.word_text);
+  const { data: bankMatches } = await supabase
+    .from('spelling_word_bank')
+    .select('*')
+    .in('word', wordTexts)
+    .eq('is_active', true);
+
+  const bankByWord = new Map<string, Word>();
+  for (const w of bankMatches ?? []) {
+    bankByWord.set(w.word, w as Word);
+  }
+
+  return items.map(item => {
+    const bankWord = bankByWord.get(item.word_text);
+    if (bankWord) return bankWord;
+
+    return {
+      id: item.id,
+      word: item.word_text,
+      level: item.level ?? 3,
+      current_elo: item.estimated_elo ?? 1500,
+      definition: item.definition ?? undefined,
+      example_sentence: item.example_sentence ?? undefined,
+      part_of_speech: item.part_of_speech ?? undefined,
+      is_active: true,
+      created_at: item.created_at,
+    } as Word;
+  });
+}
+
+/**
  * Get all active custom list words assigned to a kid.
  * Looks up each word in spelling_word_bank for full metadata;
  * words not in the bank get minimal defaults.

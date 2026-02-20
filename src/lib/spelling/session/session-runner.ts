@@ -13,8 +13,9 @@ import { selectMiniSetWords, selectChallengeJumpWords } from '../adaptivity/word
 import { calculateConfidenceScore, type MiniSetResult } from '../adaptivity/level-adjuster';
 import { updateMastery } from '../db/mastery';
 import { getKidPercentile, updateKidElo, updateKidLevel } from '../db/kids';
-import { getWord, updateWordElo } from '../db/words';
+import { getWordResolvingCustomList, updateWordElo } from '../db/words';
 import type { Word } from '../db/words';
+import { getWordsForList } from '../db/custom-lists-db';
 import { calculateEloUpdate, levelToBaseElo, percentileToLevel } from '../elo';
 import {
   computeSpellingDiff,
@@ -38,6 +39,8 @@ export interface SessionRunnerState {
   assessmentMode: boolean;
   maxLevel: number;
   promptMode?: 'audio' | 'no-audio';
+  /** When set, session draws words only from this custom list */
+  studyListId?: string;
   /** Stores the first incorrect spelling per word for break summary display */
   retrySpellings?: Record<string, string>;
 }
@@ -130,6 +133,7 @@ export class SessionRunner {
       startElo?: number;
       totalAttempts?: number;
       successfulAttempts?: number;
+      studyListId?: string;
     }
   ): Promise<{
     sessionId: string;
@@ -164,6 +168,7 @@ export class SessionRunner {
     this.state.confidenceScore = 0;
     this.state.assessmentMode = assessmentMode;
     this.state.maxLevel = maxLevel;
+    this.state.studyListId = options?.studyListId;
 
     this.stateMachine.transition({ type: 'START' });
     this.state.state = this.stateMachine.state;
@@ -206,7 +211,7 @@ export class SessionRunner {
     } | null;
     attemptsTotal: number;
   }> {
-    const word = await getWord(wordId);
+    const word = await getWordResolvingCustomList(wordId);
     if (!word) {
       throw new Error('Word not found');
     }
@@ -284,7 +289,7 @@ export class SessionRunner {
       this.state.state = this.stateMachine.state;
 
       const nextWordId = this.state.currentWordIds[wordIndex];
-      const nextWord = await getWord(nextWordId);
+      const nextWord = await getWordResolvingCustomList(nextWordId);
 
       await updateSessionState(
         this.state.sessionId,
@@ -310,7 +315,7 @@ export class SessionRunner {
       const missedWords: Array<{ word: string; userSpelling: string }> = [];
 
       for (const result of this.state.miniSetResults) {
-        const w = await getWord(result.wordId);
+        const w = await getWordResolvingCustomList(result.wordId);
         if (w) {
           if (result.correct) {
             correctWords.push(w.word);
@@ -395,7 +400,7 @@ export class SessionRunner {
         }
       }
 
-      const missedWords = await Promise.all(practiceWordIds.map(wordId => getWord(wordId)));
+      const missedWords = await Promise.all(practiceWordIds.map(wordId => getWordResolvingCustomList(wordId)));
       nextWords = missedWords.filter((word): word is Word => Boolean(word));
     } else if (action === 'CHALLENGE_JUMP') {
       nextWords = await selectChallengeJumpWords(
@@ -403,6 +408,13 @@ export class SessionRunner {
         excludeWordIds,
         this.state.kidId
       );
+    } else if (this.state.studyListId) {
+      const listWords = await getWordsForList(this.state.studyListId);
+      const seenIds = new Set(sessionWordIds);
+      const unseen = listWords.filter(w => !seenIds.has(w.id));
+      // If all words seen, wrap around (cycle through the list again)
+      const candidates = unseen.length > 0 ? unseen : listWords;
+      nextWords = candidates.slice(0, 5);
     } else {
       nextWords = await selectMiniSetWords(this.state.currentElo, this.state.kidId, excludeWordIds);
     }
@@ -411,7 +423,7 @@ export class SessionRunner {
     const missedWords: Array<{ word: string; userSpelling: string }> = [];
 
     for (const result of this.state.miniSetResults) {
-      const w = await getWord(result.wordId);
+      const w = await getWordResolvingCustomList(result.wordId);
       if (w) {
         if (result.correct) {
           correctWords.push(w.word);
