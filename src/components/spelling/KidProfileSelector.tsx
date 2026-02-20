@@ -221,8 +221,9 @@ function KidProfileSelectorContent({ parentUserId }: KidProfileSelectorProps) {
                         `/session?kidId=${kid.id}&listId=${list.id}&autoStart=1`
                       )
                     }
-                    className="w-full px-4 py-2 text-sm bg-spelling-secondary text-spelling-text rounded hover:bg-spelling-tertiary transition-colors text-left"
+                    className="w-full px-4 py-2 text-sm bg-spelling-secondary text-spelling-text rounded hover:bg-spelling-tertiary transition-colors text-left flex items-center gap-2"
                   >
+                    <span className="inline-block rounded bg-spelling-primary/15 px-1.5 py-0.5 text-xs font-medium text-spelling-primary">List</span>
                     Study: {list.title}
                   </button>
                 ))}

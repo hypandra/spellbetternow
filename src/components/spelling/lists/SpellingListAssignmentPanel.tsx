@@ -149,8 +149,9 @@ export default function SpellingListAssignmentPanel({
                       onClick={() =>
                         router.push(`/session?kidId=${kid.id}&listId=${listId}&autoStart=1`)
                       }
-                      className="min-h-[44px] rounded bg-spelling-primary px-3 py-1 text-sm text-spelling-surface hover:bg-spelling-primary-hover transition-colors"
+                      className="min-h-[44px] rounded bg-spelling-primary px-3 py-1 text-sm text-spelling-surface hover:bg-spelling-primary-hover transition-colors flex items-center gap-1.5"
                     >
+                      <span className="inline-block rounded bg-spelling-surface/20 px-1.5 py-0.5 text-xs font-medium">List</span>
                       Study
                     </button>
                   )}
