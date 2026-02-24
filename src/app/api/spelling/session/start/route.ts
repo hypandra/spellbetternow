@@ -57,14 +57,14 @@ export async function POST(request: NextRequest) {
       );
       const { data: list, error: listError } = await supabase
         .from('spelling_custom_lists')
-        .select('id, created_by')
+        .select('id, owner_user_id')
         .eq('id', listId)
         .single();
 
       if (listError || !list) {
         return NextResponse.json({ error: 'List not found' }, { status: 404 });
       }
-      if (list.created_by !== session.user.id) {
+      if (list.owner_user_id !== session.user.id) {
         return NextResponse.json({ error: 'List not found' }, { status: 404 });
       }
 
