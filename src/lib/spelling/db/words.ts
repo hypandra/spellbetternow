@@ -217,6 +217,49 @@ export async function getWord(wordId: string): Promise<Word | null> {
   return data as Word;
 }
 
+/**
+ * Resolve a word by ID, falling back to custom list items if not in the word bank.
+ * Use this instead of getWord() when the word may come from a custom list.
+ */
+export async function getWordResolvingCustomList(wordId: string): Promise<Word | null> {
+  const bankWord = await getWord(wordId);
+  if (bankWord) return bankWord;
+
+  const supabase = getSupabaseClient();
+  const { data: item, error } = await supabase
+    .from('spelling_custom_list_items')
+    .select(
+      'id, word_text, is_active, created_at, definition, example_sentence, part_of_speech, level, estimated_elo'
+    )
+    .eq('id', wordId)
+    .single();
+
+  if (error || !item) return null;
+
+  // Check if word bank has this word by text for richer metadata
+  const { data: bankMatch } = await supabase
+    .from('spelling_word_bank')
+    .select('*')
+    .eq('word', item.word_text)
+    .eq('is_active', true)
+    .limit(1)
+    .single();
+
+  if (bankMatch) return bankMatch as Word;
+
+  return {
+    id: item.id,
+    word: item.word_text,
+    level: item.level ?? 3,
+    current_elo: item.estimated_elo ?? 1500,
+    definition: item.definition ?? undefined,
+    example_sentence: item.example_sentence ?? undefined,
+    part_of_speech: item.part_of_speech ?? undefined,
+    is_active: true,
+    created_at: item.created_at,
+  } as Word;
+}
+
 export async function updateWordElo(wordId: string, newElo: number): Promise<void> {
   const supabase = getSupabaseClient();
   const { error } = await supabase

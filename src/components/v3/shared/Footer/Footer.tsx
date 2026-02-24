@@ -26,6 +26,9 @@ export function Footer() {
               View landing page
             </Link>
           )}
+          <Link href="/changelog" className="text-spelling-text-muted hover:text-spelling-text">
+            Changelog
+          </Link>
         </div>
       </div>
     </footer>

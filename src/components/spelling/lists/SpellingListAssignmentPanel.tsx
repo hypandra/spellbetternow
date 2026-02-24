@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type Learner = {
   id: string;
@@ -42,6 +43,7 @@ export default function SpellingListAssignmentPanel({
     return map;
   }, [assignments]);
 
+  const router = useRouter();
   const [state, setState] = useState<Record<string, AssignmentState>>(initialAssignments);
   const [pendingKidId, setPendingKidId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +94,7 @@ export default function SpellingListAssignmentPanel({
       <h2 className="text-lg font-semibold text-spelling-text">Assign to learners</h2>
       <p className="mt-1 text-sm text-spelling-text-muted">
         Toggle which learners should receive this list and adjust the weight.
+        Higher weight (1–10) means words from this list appear more often in practice.
       </p>
       {learners.length === 0 && (
         <p className="mt-4 text-sm text-spelling-text-muted">
@@ -141,6 +144,17 @@ export default function SpellingListAssignmentPanel({
                   {isPending ? (
                     <span className="text-xs text-spelling-text-muted">Saving...</span>
                   ) : null}
+                  {assignment.isEnabled && !isPending && (
+                    <button
+                      onClick={() =>
+                        router.push(`/session?kidId=${kid.id}&listId=${listId}&autoStart=1`)
+                      }
+                      className="min-h-[44px] rounded bg-spelling-primary px-3 py-1 text-sm text-spelling-surface hover:bg-spelling-primary-hover transition-colors flex items-center gap-1.5"
+                    >
+                      <span className="inline-block rounded bg-spelling-surface/20 px-1.5 py-0.5 text-xs font-medium">List</span>
+                      Study
+                    </button>
+                  )}
                 </div>
               </div>
             );

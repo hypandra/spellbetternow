@@ -1,7 +1,14 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { getOptionalUserId } from '@/utils/supabase/roles';
+
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 import SpellingManualImportForm from '@/components/spelling/lists/SpellingManualImportForm';
 
 export default async function SpellingListImportPage({
@@ -10,7 +17,7 @@ export default async function SpellingListImportPage({
   params: Promise<{ listId: string }>;
 }) {
   const { listId } = await params;
-  const supabase = await createClient();
+  const supabase = getServiceClient();
   const userId = await getOptionalUserId();
 
   if (!userId) {

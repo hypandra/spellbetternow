@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "scripts/word-pipeline", "scripts/hint-pipeline"]
+  "exclude": ["node_modules", "scripts/word-pipeline", "scripts/hint-pipeline", "playwright.config.ts"]
 }

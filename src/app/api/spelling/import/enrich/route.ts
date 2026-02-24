@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { isValidWordLength, normalizeWord } from '@/lib/spelling/custom-lists';
 
 type EnrichedWord = {
@@ -171,6 +171,13 @@ async function enrichWithLlm(words: string[]): Promise<EnrichedWord[]> {
   });
 }
 
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
+
 export async function POST(request: Request) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -193,7 +200,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No valid words provided' }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const supabase = getServiceClient();
     const { data: bankMatches, error: bankError } = await supabase
       .from('spelling_word_bank')
       .select('word, definition, example_sentence, part_of_speech, level, current_elo')

@@ -4,11 +4,12 @@ export class SpellingSessionClient {
   static async start(
     kidId: string,
     wordIds?: string[],
-    options?: { assessment?: boolean; mode?: 'audio' | 'no-audio' }
+    options?: { assessment?: boolean; mode?: 'audio' | 'no-audio'; listId?: string }
   ): Promise<SessionResponse> {
     return this.post('/api/spelling/session/start', {
       kidId,
       wordIds,
+      listId: options?.listId,
       assessment: options?.assessment,
       mode: options?.mode,
     });

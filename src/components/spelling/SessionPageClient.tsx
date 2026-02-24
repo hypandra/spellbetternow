@@ -11,7 +11,7 @@ import { useSpellingSession } from '@/features/spelling/hooks/useSpellingSession
 
 function SessionPageContent() {
   const router = useRouter();
-  const { kidId, wordIds, autoStart, assessment, mode } = useSessionParams();
+  const { kidId, wordIds, autoStart, assessment, mode, listId } = useSessionParams();
   const {
     state,
     sessionId,
@@ -33,7 +33,7 @@ function SessionPageContent() {
     handleFinish,
     handleApplyAssessmentLevel,
     clearError,
-  } = useSpellingSession(kidId, { wordIds, autoStart, assessment, mode });
+  } = useSpellingSession(kidId, { wordIds, autoStart, assessment, mode, listId });
 
   if (loading) {
     return <SessionLoading />;
