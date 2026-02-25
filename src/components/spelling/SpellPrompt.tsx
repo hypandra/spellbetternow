@@ -175,6 +175,7 @@ interface TapLettersPanelProps {
   undoLetter: () => void;
   clearAnswer: () => void;
   playWord: () => void;
+  stopAudio: () => void;
   onSubmit: () => void;
 }
 
@@ -264,6 +265,7 @@ function TapLettersPanel({
   undoLetter,
   clearAnswer,
   playWord,
+  stopAudio,
   onSubmit,
 }: TapLettersPanelProps) {
   const canSubmit =
@@ -1084,6 +1086,7 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
             undoLetter={undoLetter}
             clearAnswer={clearAnswer}
             playWord={playWord}
+            stopAudio={stopAudio}
             onSubmit={handleSubmit}
           />
         ) : (
