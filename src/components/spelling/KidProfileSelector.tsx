@@ -218,7 +218,7 @@ function KidProfileSelectorContent({ parentUserId }: KidProfileSelectorProps) {
                     key={list.id}
                     onClick={() =>
                       router.push(
-                        `/session?kidId=${kid.id}&listId=${list.id}&autoStart=1`
+                        `/session?kidId=${kid.id}&listId=${list.id}`
                       )
                     }
                     className="w-full px-4 py-2 text-sm bg-spelling-secondary text-spelling-text rounded hover:bg-spelling-tertiary transition-colors text-left flex items-center gap-2"

@@ -194,6 +194,7 @@ interface TypedInputPanelProps {
   onUserSpellingChange: (value: string) => void;
   onSubmit: () => void;
   onReplay: () => void;
+  onStop?: () => void;
 }
 
 interface UseSpellPromptSubmissionOptions {
@@ -323,11 +324,10 @@ function TapLettersPanel({
         </button>
         {!isNoAudioMode && (
           <button
-            onClick={playWord}
-            disabled={isPlaying}
+            onClick={isPlaying ? stopAudio : playWord}
             className="px-6 py-3 bg-spelling-accent text-spelling-text rounded-lg text-lg hover:bg-spelling-tertiary disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {themeContent.buttons.replay}
+            {isPlaying ? '⏸' : themeContent.buttons.replay}
           </button>
         )}
         {userSpelling.trim() && (
@@ -372,6 +372,7 @@ function TypedInputPanel({
   onUserSpellingChange,
   onSubmit,
   onReplay,
+  onStop,
 }: TypedInputPanelProps) {
   const submitDisabled =
     !hasPlayed ||
@@ -471,25 +472,24 @@ function TypedInputPanel({
           onKey={handleMobileKey}
           onBackspace={handleMobileBackspace}
           onSubmit={handleMobileSubmit}
-          onReplay={onReplay}
+          onReplay={isPlaying && onStop ? onStop : onReplay}
           onLeft={handleMobileLeft}
           onRight={handleMobileRight}
           submitDisabled={submitDisabled}
-          replayDisabled={isPlaying}
+          replayDisabled={false}
           hideReplay={isNoAudioMode}
           submitLabel={submitLabel}
-          replayLabel={themeContent.buttons.replay}
+          replayLabel={isPlaying ? '⏸' : themeContent.buttons.replay}
         />
       ) : (
         <>
           <div className="flex gap-4 justify-center">
             {!isNoAudioMode && (
               <button
-                onClick={onReplay}
-                disabled={isPlaying}
+                onClick={isPlaying ? onStop : onReplay}
                 className="px-6 py-3 bg-spelling-accent text-spelling-text rounded-lg hover:bg-spelling-tertiary disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {themeContent.buttons.replay}
+                {isPlaying ? '⏸' : themeContent.buttons.replay}
               </button>
             )}
             <button
@@ -568,7 +568,14 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
 
   const playWord = useCallback(async () => {
     if (isNoAudio) return;
-    if (isPlayingRef.current) return;
+    if (isPlayingRef.current) {
+      // Stop any existing playback before starting new
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      setPlayingState(false);
+    }
 
     // iOS audio unlock: create Audio element and play silent audio SYNCHRONOUSLY in gesture
     // This "unlocks" the element for future async plays
@@ -1011,15 +1018,19 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
           <>
             <button
               onClick={() => {
-                onRequestUnlock?.();
-                playWord();
+                if (isPlaying) {
+                  stopAudio();
+                } else {
+                  onRequestUnlock?.();
+                  playWord();
+                }
               }}
-              disabled={isPlaying || isLoading}
+              disabled={isLoading}
               className="text-6xl p-8 bg-spelling-primary text-spelling-surface rounded-full hover:bg-spelling-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Play word"
+              aria-label={isPlaying ? 'Pause' : 'Play word'}
               ref={playButtonRef}
             >
-              {themeContent.playIcon}
+              {isPlaying ? '⏸' : themeContent.playIcon}
             </button>
 
             <AiVoiceIndicator />
@@ -1092,6 +1103,7 @@ export default function SpellPrompt({ word, wordIndex, prompt, onSubmit, audioUn
             onUserSpellingChange={setUserSpelling}
             onSubmit={handleSubmit}
             onReplay={playWord}
+            onStop={stopAudio}
           />
         )}
 

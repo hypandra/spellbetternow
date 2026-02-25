@@ -147,7 +147,7 @@ export default function SpellingListAssignmentPanel({
                   {assignment.isEnabled && !isPending && (
                     <button
                       onClick={() =>
-                        router.push(`/session?kidId=${kid.id}&listId=${listId}&autoStart=1`)
+                        router.push(`/session?kidId=${kid.id}&listId=${listId}`)
                       }
                       className="min-h-[44px] rounded bg-spelling-primary px-3 py-1 text-sm text-spelling-surface hover:bg-spelling-primary-hover transition-colors flex items-center gap-1.5"
                     >
