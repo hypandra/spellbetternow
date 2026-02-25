@@ -181,7 +181,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
         setError(
           payload.error ??
-            'Could not look up word details. Try again or add words without enrichment.'
+            'Could not look up word details. Please try again.'
         );
         return;
       }
@@ -191,7 +191,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
       setLevelFilter(null);
     } catch (err) {
       console.error('[Spelling Enrich Words] Error:', err);
-      setError('Could not look up word details. Try again or add words without enrichment.');
+      setError('Could not look up word details. Please try again.');
     } finally {
       setIsEnriching(false);
     }
@@ -360,27 +360,31 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={handleEnrichSelectedWords}
-            disabled={selectedWords.length === 0 || isEnriching || isEnrichLimitExceeded}
-            className="inline-flex min-h-[44px] items-center rounded bg-spelling-secondary px-4 py-2 text-sm font-semibold text-spelling-text hover:bg-spelling-tertiary disabled:opacity-60"
-          >
-            {isEnriching ? 'Enriching...' : 'Enrich selected words'}
-          </button>
-          <button
-            type="button"
-            onClick={handleAddWords}
-            disabled={
-              (enrichedWords.length > 0
-                ? filteredEnrichedWords.length === 0
-                : selectedWords.length === 0) || isSubmitting
-            }
-            className="inline-flex min-h-[44px] items-center rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
-          >
-            {isSubmitting ? 'Adding...' : 'Add to list'}
-          </button>
+          {enrichedWords.length === 0 ? (
+            <button
+              type="button"
+              onClick={handleEnrichSelectedWords}
+              disabled={selectedWords.length === 0 || isEnriching || isEnrichLimitExceeded}
+              className="inline-flex min-h-[44px] items-center rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
+            >
+              {isEnriching ? 'Looking up word details...' : 'Look up word details'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAddWords}
+              disabled={filteredEnrichedWords.length === 0 || isSubmitting}
+              className="inline-flex min-h-[44px] items-center rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
+            >
+              {isSubmitting ? 'Adding...' : 'Add to list'}
+            </button>
+          )}
         </div>
+        {enrichedWords.length === 0 && selectedWords.length > 0 && (
+          <p className="mt-2 text-xs text-spelling-text-muted">
+            Words must be enriched with definitions before adding to a list.
+          </p>
+        )}
         {isEnrichLimitExceeded ? (
           <p className="mt-2 text-xs text-spelling-text-muted">
             Enrichment supports up to 20 words at a time. Deselect some words or add in batches.

@@ -110,6 +110,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No valid words provided' }, { status: 400 });
     }
 
+    // Promote enriched words to the word bank (non-fatal)
+    const enrichedEntries = Array.from(deduped.entries()).filter(
+      ([, entry]) => entry.definition
+    );
+    if (enrichedEntries.length > 0) {
+      const bankPayload = enrichedEntries.map(([wordText, entry]) => ({
+        word: wordText,
+        definition: entry.definition!,
+        example_sentence: entry.example_sentence ?? null,
+        part_of_speech: entry.part_of_speech ?? null,
+        level: entry.level ?? 3,
+        base_elo: entry.estimated_elo ?? 1500,
+        current_elo: entry.estimated_elo ?? 1500,
+        is_active: true,
+      }));
+
+      const { error: bankError } = await supabase
+        .from('spelling_word_bank')
+        .upsert(bankPayload, { onConflict: 'word', ignoreDuplicates: true });
+
+      if (bankError) {
+        console.warn('[Spelling Add Words] Word bank promotion failed (non-fatal):', bankError);
+      }
+    }
+
     const { data: source, error: sourceError } = await supabase
       .from('spelling_custom_list_sources')
       .insert({
