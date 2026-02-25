@@ -64,6 +64,8 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
   const [isEnriching, setIsEnriching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [tab, setTab] = useState<'import' | 'candidates' | 'review'>('import');
+
   const selectedWords = useMemo(
     () => candidates.filter(word => selected[word]),
     [candidates, selected]
@@ -106,6 +108,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
     setSelected(nextSelected);
     setEnrichedWords([]);
     setLevelFilter(null);
+    setTab('candidates');
   };
 
   const handleExtract = async () => {
@@ -189,6 +192,7 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
       const payload = (await response.json()) as { enriched?: EnrichedWord[] };
       setEnrichedWords(Array.isArray(payload.enriched) ? payload.enriched : []);
       setLevelFilter(null);
+      setTab('review');
     } catch (err) {
       console.error('[Spelling Enrich Words] Error:', err);
       setError('Could not look up word details. Please try again.');
@@ -273,214 +277,232 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
     });
   };
 
+  const tabs = [
+    { id: 'import' as const, label: 'Import' },
+    { id: 'candidates' as const, label: `Candidates${candidates.length > 0 ? ` (${candidates.length})` : ''}`, disabled: candidates.length === 0 },
+    { id: 'review' as const, label: `Review${enrichedWords.length > 0 ? ` (${enrichedWords.length})` : ''}`, disabled: enrichedWords.length === 0 },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="rounded-lg border border-spelling-border bg-spelling-surface p-4">
-        <label className="block text-sm font-medium text-spelling-text">Upload file (.csv or .txt)</label>
-        <input
-          type="file"
-          accept=".csv,.txt,text/plain,text/csv"
-          onChange={handleFileUpload}
-          className="mt-2 block w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-base text-spelling-text"
-        />
-        <p className="mt-2 text-xs text-spelling-text-muted text-pretty">
-          CSV uses the first column or a column named word/words. TXT supports one word per line or free text.
-        </p>
-        {isReadingFile ? <p className="mt-2 text-xs text-spelling-text-muted">Reading file...</p> : null}
+    <div className="space-y-4">
+      <div className="flex gap-1 border-b border-spelling-border">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => !t.disabled && setTab(t.id)}
+            disabled={t.disabled}
+            className={`min-h-[44px] px-4 py-2 text-sm font-medium transition-colors ${
+              tab === t.id
+                ? 'border-b-2 border-spelling-primary text-spelling-text'
+                : t.disabled
+                  ? 'text-spelling-text-muted/40 cursor-not-allowed'
+                  : 'text-spelling-text-muted hover:text-spelling-text'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       <div className="rounded-lg border border-spelling-border bg-spelling-surface p-4">
-        <label className="block text-sm font-medium text-spelling-text">Paste your words</label>
-        <textarea
-          value={text}
-          onChange={event => setText(event.target.value)}
-          className="mt-2 w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-base text-spelling-text"
-          rows={6}
-          placeholder="Paste a paragraph or list of words"
-        />
-        <button
-          type="button"
-          onClick={handleExtract}
-          disabled={isExtracting || !text.trim()}
-          className="mt-3 inline-flex min-h-[44px] items-center rounded bg-spelling-secondary px-4 py-2 text-sm font-semibold text-spelling-text hover:bg-spelling-tertiary disabled:opacity-60"
-        >
-          {isExtracting ? 'Extracting...' : 'Extract candidates'}
-        </button>
-      </div>
-
-      <div className="rounded-lg border border-spelling-border bg-spelling-surface p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-spelling-text text-balance">Preview candidates</h2>
-            <p className="text-sm text-spelling-text-muted tabular-nums">
-              {candidates.length} candidates, {selectedWords.length} selected
-              {levelFilter !== null && enrichedWords.length > 0
-                ? ` (showing ${filteredEnrichedWords.length} at level ${levelFilter}+)`
-                : ''}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => toggleAll(true)}
-              className="inline-flex min-h-[44px] items-center rounded border border-spelling-border-input px-3 py-2 text-sm text-spelling-text"
-            >
-              Select all
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleAll(false)}
-              className="inline-flex min-h-[44px] items-center rounded border border-spelling-border-input px-3 py-2 text-sm text-spelling-text"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {candidates.length === 0 ? (
-            <p className="text-sm text-spelling-text-muted">
-              Upload a file or paste words above to see candidates here.
-            </p>
-          ) : (
-            candidates.map(word => (
-              <label
-                key={word}
-                className="flex min-h-[44px] items-center gap-2 rounded border border-spelling-border-input bg-spelling-lesson-bg px-2 py-2 text-sm text-spelling-text"
-              >
-                <input
-                  type="checkbox"
-                  checked={Boolean(selected[word])}
-                  onChange={event => toggleSelectedWord(word, event.target.checked)}
-                  className="size-4"
-                />
-                {word}
-              </label>
-            ))
-          )}
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {enrichedWords.length === 0 ? (
-            <button
-              type="button"
-              onClick={handleEnrichSelectedWords}
-              disabled={selectedWords.length === 0 || isEnriching || isEnrichLimitExceeded}
-              className="inline-flex min-h-[44px] items-center rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
-            >
-              {isEnriching ? 'Looking up word details...' : 'Look up word details'}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleAddWords}
-              disabled={filteredEnrichedWords.length === 0 || isSubmitting}
-              className="inline-flex min-h-[44px] items-center rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
-            >
-              {isSubmitting ? 'Adding...' : 'Add to list'}
-            </button>
-          )}
-        </div>
-        {enrichedWords.length === 0 && selectedWords.length > 0 && (
-          <p className="mt-2 text-xs text-spelling-text-muted">
-            Words must be enriched with definitions before adding to a list.
-          </p>
-        )}
-        {isEnrichLimitExceeded ? (
-          <p className="mt-2 text-xs text-spelling-text-muted">
-            Enrichment supports up to 20 words at a time. Deselect some words or add in batches.
-          </p>
-        ) : null}
-        {enrichedWords.length > 0 && filteredEnrichedWords.length === 0 ? (
-          <p className="mt-2 text-sm text-spelling-text-muted">
-            No words match the current level filter. Adjust the filter or select All levels.
-          </p>
-        ) : null}
-      </div>
-
-      {enrichedWords.length > 0 ? (
-        <div className="rounded-lg border border-spelling-border bg-spelling-surface p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        {tab === 'import' && (
+          <>
             <div>
-              <h2 className="text-lg font-semibold text-spelling-text text-balance">
-                Enriched words preview
-              </h2>
-              {levelFilter !== null && (
-                <p className="text-sm text-spelling-text-muted tabular-nums">
-                  Showing {filteredEnrichedWords.length} of {enrichedWords.length} words at level {levelFilter}+
-                </p>
-              )}
+              <label className="block text-sm font-medium text-spelling-text">Upload file (.csv or .txt)</label>
+              <input
+                type="file"
+                accept=".csv,.txt,text/plain,text/csv"
+                onChange={handleFileUpload}
+                className="mt-2 block w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-base text-spelling-text"
+              />
+              <p className="mt-2 text-xs text-spelling-text-muted text-pretty">
+                CSV uses the first column or a column named word/words. TXT supports one word per line or free text.
+              </p>
+              {isReadingFile ? <p className="mt-2 text-xs text-spelling-text-muted">Reading file...</p> : null}
             </div>
-            <label className="flex items-center gap-2 text-sm font-medium text-spelling-text">
-              Show words at or above level
-              <select
-                value={levelFilter === null ? 'all' : String(levelFilter)}
-                onChange={event =>
-                  setLevelFilter(event.target.value === 'all' ? null : Number(event.target.value))
-                }
-                className="rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-base text-spelling-text"
+
+            <hr className="my-4 border-spelling-border" />
+
+            <div>
+              <label className="block text-sm font-medium text-spelling-text">Paste your words</label>
+              <textarea
+                value={text}
+                onChange={event => setText(event.target.value)}
+                className="mt-2 w-full rounded border border-spelling-border-input bg-spelling-surface px-3 py-2 text-base text-spelling-text"
+                rows={6}
+                placeholder="Paste a paragraph or list of words"
+              />
+              <button
+                type="button"
+                onClick={handleExtract}
+                disabled={isExtracting || !text.trim()}
+                className="mt-3 inline-flex min-h-[44px] items-center rounded bg-spelling-secondary px-4 py-2 text-sm font-semibold text-spelling-text hover:bg-spelling-tertiary disabled:opacity-60"
               >
-                <option value="all">All levels</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-              </select>
-            </label>
-          </div>
-          <div className="mt-4 overflow-x-auto rounded border border-spelling-border-input">
-            <table className="w-full text-sm">
-              <thead className="bg-spelling-lesson-bg text-left text-xs uppercase text-spelling-text-muted">
-                <tr>
-                  <th className="px-3 py-2">Word</th>
-                  <th className="px-3 py-2">Definition</th>
-                  <th className="px-3 py-2">Level</th>
-                  <th className="px-3 py-2">Part of speech</th>
-                  <th className="px-3 py-2">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEnrichedWords.map(item => (
-                  <tr key={item.word} className="border-t border-spelling-border-input">
-                    <td className="px-3 py-2 font-medium text-spelling-text">
-                      {item.word}
-                      {item.source === 'word_bank' ? (
-                        <span className="ml-1.5 inline-block rounded bg-spelling-secondary px-1.5 py-0.5 text-[10px] font-medium text-spelling-text-muted">
-                          In bank
-                        </span>
-                      ) : (
-                        <span className="ml-1.5 inline-block rounded bg-spelling-lesson-bg px-1.5 py-0.5 text-[10px] font-medium text-spelling-text-muted">
-                          New
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        value={item.definition}
-                        onChange={event => updateEnrichedDefinition(item.word, event.target.value)}
-                        className="w-full rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-base text-spelling-text"
-                      />
-                    </td>
-                    <td className="px-3 py-2 text-spelling-text tabular-nums">{item.level}</td>
-                    <td className="px-3 py-2 text-spelling-text">{item.part_of_speech || '—'}</td>
-                    <td className="px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => removeEnrichedWord(item.word)}
-                        className="inline-flex min-h-[44px] items-center rounded border border-spelling-border-input px-3 py-2 text-xs text-spelling-text"
-                      >
-                        Remove
-                      </button>
-                    </td>
+                {isExtracting ? 'Extracting...' : 'Extract candidates'}
+              </button>
+            </div>
+          </>
+        )}
+
+        {tab === 'candidates' && (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-spelling-text-muted tabular-nums">
+                {candidates.length} candidates, {selectedWords.length} selected
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleAll(true)}
+                  className="inline-flex min-h-[44px] items-center rounded border border-spelling-border-input px-3 py-2 text-sm text-spelling-text"
+                >
+                  Select all
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleAll(false)}
+                  className="inline-flex min-h-[44px] items-center rounded border border-spelling-border-input px-3 py-2 text-sm text-spelling-text"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {candidates.map(word => (
+                <label
+                  key={word}
+                  className="flex min-h-[44px] items-center gap-2 rounded border border-spelling-border-input bg-spelling-lesson-bg px-2 py-2 text-sm text-spelling-text"
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(selected[word])}
+                    onChange={event => toggleSelectedWord(word, event.target.checked)}
+                    className="size-4"
+                  />
+                  {word}
+                </label>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleEnrichSelectedWords}
+                disabled={selectedWords.length === 0 || isEnriching || isEnrichLimitExceeded}
+                className="inline-flex min-h-[44px] items-center rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
+              >
+                {isEnriching ? 'Looking up word details...' : 'Look up word details'}
+              </button>
+            </div>
+            {selectedWords.length > 0 && !isEnriching && (
+              <p className="mt-2 text-xs text-spelling-text-muted">
+                Words must be enriched with definitions before adding to a list.
+              </p>
+            )}
+            {isEnrichLimitExceeded ? (
+              <p className="mt-2 text-xs text-spelling-text-muted">
+                Enrichment supports up to 20 words at a time. Deselect some words or add in batches.
+              </p>
+            ) : null}
+          </>
+        )}
+
+        {tab === 'review' && (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-spelling-text-muted tabular-nums">
+                {enrichedWords.length} words
+                {levelFilter !== null
+                  ? ` (showing ${filteredEnrichedWords.length} at level ${levelFilter}+)`
+                  : ''}
+              </p>
+              <label className="flex items-center gap-2 text-sm font-medium text-spelling-text">
+                Min level
+                <select
+                  value={levelFilter === null ? 'all' : String(levelFilter)}
+                  onChange={event =>
+                    setLevelFilter(event.target.value === 'all' ? null : Number(event.target.value))
+                  }
+                  className="rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-base text-spelling-text"
+                >
+                  <option value="all">All</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                </select>
+              </label>
+            </div>
+            <div className="mt-4 overflow-x-auto rounded border border-spelling-border-input">
+              <table className="w-full text-sm">
+                <thead className="bg-spelling-lesson-bg text-left text-xs uppercase text-spelling-text-muted">
+                  <tr>
+                    <th className="px-3 py-2">Word</th>
+                    <th className="px-3 py-2">Definition</th>
+                    <th className="px-3 py-2">Level</th>
+                    <th className="px-3 py-2">Part of speech</th>
+                    <th className="px-3 py-2">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : null}
+                </thead>
+                <tbody>
+                  {filteredEnrichedWords.map(item => (
+                    <tr key={item.word} className="border-t border-spelling-border-input">
+                      <td className="px-3 py-2 font-medium text-spelling-text">
+                        {item.word}
+                        {item.source === 'word_bank' ? (
+                          <span className="ml-1.5 inline-block rounded bg-spelling-secondary px-1.5 py-0.5 text-[10px] font-medium text-spelling-text-muted">
+                            In bank
+                          </span>
+                        ) : (
+                          <span className="ml-1.5 inline-block rounded bg-spelling-lesson-bg px-1.5 py-0.5 text-[10px] font-medium text-spelling-text-muted">
+                            New
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          value={item.definition}
+                          onChange={event => updateEnrichedDefinition(item.word, event.target.value)}
+                          className="w-full rounded border border-spelling-border-input bg-spelling-surface px-2 py-1 text-base text-spelling-text"
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-spelling-text tabular-nums">{item.level}</td>
+                      <td className="px-3 py-2 text-spelling-text">{item.part_of_speech || '—'}</td>
+                      <td className="px-3 py-2">
+                        <button
+                          type="button"
+                          onClick={() => removeEnrichedWord(item.word)}
+                          className="inline-flex min-h-[44px] items-center rounded border border-spelling-border-input px-3 py-2 text-xs text-spelling-text"
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleAddWords}
+                disabled={filteredEnrichedWords.length === 0 || isSubmitting}
+                className="inline-flex min-h-[44px] items-center rounded bg-spelling-primary px-4 py-2 text-sm font-semibold text-spelling-surface hover:bg-spelling-primary-hover disabled:opacity-60"
+              >
+                {isSubmitting ? 'Adding...' : 'Add to list'}
+              </button>
+            </div>
+            {filteredEnrichedWords.length === 0 ? (
+              <p className="mt-2 text-sm text-spelling-text-muted">
+                No words match the current level filter. Adjust the filter or select All levels.
+              </p>
+            ) : null}
+          </>
+        )}
+      </div>
 
       {error ? <p className="text-sm text-spelling-error-text text-pretty">{error}</p> : null}
     </div>
