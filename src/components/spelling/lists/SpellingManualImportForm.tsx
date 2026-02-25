@@ -444,7 +444,18 @@ export default function SpellingManualImportForm({ listId }: SpellingManualImpor
               <tbody>
                 {filteredEnrichedWords.map(item => (
                   <tr key={item.word} className="border-t border-spelling-border-input">
-                    <td className="px-3 py-2 font-medium text-spelling-text">{item.word}</td>
+                    <td className="px-3 py-2 font-medium text-spelling-text">
+                      {item.word}
+                      {item.source === 'word_bank' ? (
+                        <span className="ml-1.5 inline-block rounded bg-spelling-secondary px-1.5 py-0.5 text-[10px] font-medium text-spelling-text-muted">
+                          In bank
+                        </span>
+                      ) : (
+                        <span className="ml-1.5 inline-block rounded bg-spelling-lesson-bg px-1.5 py-0.5 text-[10px] font-medium text-spelling-text-muted">
+                          New
+                        </span>
+                      )}
+                    </td>
                     <td className="px-3 py-2">
                       <input
                         value={item.definition}
