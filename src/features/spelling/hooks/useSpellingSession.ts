@@ -274,6 +274,7 @@ export function useSpellingSession(
     }
   }
 
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- auto-start triggers session (intentional) */
   useEffect(() => {
     if (!options?.autoStart || state !== 'START' || !kidId) return;
     if (loading || error) return;
@@ -283,6 +284,7 @@ export function useSpellingSession(
     hasAutoStartedRef.current = true;
     void handleStart();
   }, [kidId, options?.autoStart, state, loading, error, sessionId, currentWord]);
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   return {
     state,

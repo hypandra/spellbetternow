@@ -1,22 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockGetCustomListWordsForKid = vi.fn();
-
 vi.mock('../db/words', () => ({
   getWordsForMiniSetByElo: vi.fn(),
   getEasierWordsByElo: vi.fn(),
 }));
 
 vi.mock('../db/custom-lists-db', () => ({
-  getCustomListWordsForKid: mockGetCustomListWordsForKid,
+  getCustomListWordsForKid: vi.fn(),
 }));
 
 import { selectMiniSetWords } from './word-selector';
 import { getWordsForMiniSetByElo, getEasierWordsByElo } from '../db/words';
+import { getCustomListWordsForKid } from '../db/custom-lists-db';
 import type { Word } from '../db/words';
 
 const mockGetWordsForMiniSetByElo = getWordsForMiniSetByElo as ReturnType<typeof vi.fn>;
 const mockGetEasierWordsByElo = getEasierWordsByElo as ReturnType<typeof vi.fn>;
+const mockGetCustomListWordsForKid = getCustomListWordsForKid as ReturnType<typeof vi.fn>;
 
 describe('selectMiniSetWords custom list integration', () => {
   beforeEach(() => {

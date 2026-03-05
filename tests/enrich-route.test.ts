@@ -1,37 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-var mockGetSession: ReturnType<typeof vi.fn>;
-var mockCreateClient: ReturnType<typeof vi.fn>;
-var mockHeaders: ReturnType<typeof vi.fn>;
-var mockFetch: ReturnType<typeof vi.fn>;
-
-vi.mock('@/lib/auth', () => {
-  mockGetSession = vi.fn();
-  return {
-    auth: {
-      api: {
-        getSession: mockGetSession,
-      },
+vi.mock('@/lib/auth', () => ({
+  auth: {
+    api: {
+      getSession: vi.fn(),
     },
-  };
-});
+  },
+}));
 
-vi.mock('@supabase/supabase-js', () => {
-  mockCreateClient = vi.fn();
-  return {
-    createClient: mockCreateClient,
-  };
-});
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn(),
+}));
 
-vi.mock('next/headers', () => {
-  mockHeaders = vi.fn();
-  return {
-    headers: mockHeaders,
-  };
-});
+vi.mock('next/headers', () => ({
+  headers: vi.fn(),
+}));
 
 import { POST } from '@/app/api/spelling/import/enrich/route';
+import { auth } from '@/lib/auth';
+import { createClient } from '@supabase/supabase-js';
+import { headers } from 'next/headers';
+
+const mockGetSession = auth.api.getSession as unknown as ReturnType<typeof vi.fn>;
+const mockCreateClient = createClient as ReturnType<typeof vi.fn>;
+const mockHeaders = headers as ReturnType<typeof vi.fn>;
+let mockFetch: ReturnType<typeof vi.fn>;
 
 function makeRequest(payload: unknown) {
   return new NextRequest('http://localhost/api/spelling/import/enrich', {
@@ -89,7 +83,8 @@ describe('POST /api/spelling/import/enrich', () => {
       }
       throw new Error(`Unexpected fetch URL: ${url} ${String(init?.method ?? '')}`);
     });
-    (global as typeof globalThis & { fetch: typeof mockFetch }).fetch = mockFetch;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (global as any).fetch = mockFetch;
   });
 
   it('returns 401 when not authenticated', async () => {

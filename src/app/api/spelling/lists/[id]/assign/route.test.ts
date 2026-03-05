@@ -1,26 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockGetSession = vi.fn();
-const mockCreateClient = vi.fn();
-const mockHeaders = vi.fn();
-
 vi.mock('@/lib/auth', () => ({
   auth: {
     api: {
-      getSession: mockGetSession,
+      getSession: vi.fn(),
     },
   },
 }));
 
-vi.mock('@/utils/supabase/server', () => ({
-  createClient: mockCreateClient,
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn(),
 }));
 
 vi.mock('next/headers', () => ({
-  headers: mockHeaders,
+  headers: vi.fn(),
 }));
 
 import { POST } from './route';
+import { auth } from '@/lib/auth';
+import { createClient } from '@supabase/supabase-js';
+import { headers } from 'next/headers';
+
+const mockGetSession = auth.api.getSession as unknown as ReturnType<typeof vi.fn>;
+const mockCreateClient = createClient as ReturnType<typeof vi.fn>;
+const mockHeaders = headers as ReturnType<typeof vi.fn>;
 
 type QueryResult<T> = {
   data: T | null;
@@ -94,6 +97,8 @@ function createSupabaseMock(options: SupabaseMockOptions = {}) {
 describe('POST /api/spelling/lists/[id]/assign', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
     mockHeaders.mockResolvedValue(new Headers());
     mockGetSession.mockResolvedValue({ user: { id: 'user-1' } });
   });
@@ -115,7 +120,7 @@ describe('POST /api/spelling/lists/[id]/assign', () => {
 
   it('returns 400 for invalid payloads', async () => {
     const { supabase } = createSupabaseMock();
-    mockCreateClient.mockResolvedValue(supabase);
+    mockCreateClient.mockReturnValue(supabase);
 
     const response = await POST(
       new Request('http://localhost/api/spelling/lists/list-1/assign', {
@@ -135,7 +140,7 @@ describe('POST /api/spelling/lists/[id]/assign', () => {
     const { supabase } = createSupabaseMock({
       listResult: { data: null, error: null },
     });
-    mockCreateClient.mockResolvedValue(supabase);
+    mockCreateClient.mockReturnValue(supabase);
 
     const response = await POST(
       new Request('http://localhost/api/spelling/lists/list-1/assign', {
@@ -154,7 +159,7 @@ describe('POST /api/spelling/lists/[id]/assign', () => {
       listResult: { data: { id: 'list-1', owner_user_id: 'someone-else' }, error: null },
       kidResult: { data: { id: '11111111-1111-4111-8111-111111111111', parent_user_id: 'someone-else' }, error: null },
     });
-    mockCreateClient.mockResolvedValue(supabase);
+    mockCreateClient.mockReturnValue(supabase);
 
     const response = await POST(
       new Request('http://localhost/api/spelling/lists/list-1/assign', {
@@ -180,7 +185,7 @@ describe('POST /api/spelling/lists/[id]/assign', () => {
         error: null,
       },
     });
-    mockCreateClient.mockResolvedValue(supabase);
+    mockCreateClient.mockReturnValue(supabase);
 
     const response = await POST(
       new Request('http://localhost/api/spelling/lists/list-1/assign', {
@@ -211,7 +216,7 @@ describe('POST /api/spelling/lists/[id]/assign', () => {
     const { supabase } = createSupabaseMock({
       assignResult: { data: null, error: { message: 'db write failed' } },
     });
-    mockCreateClient.mockResolvedValue(supabase);
+    mockCreateClient.mockReturnValue(supabase);
 
     const response = await POST(
       new Request('http://localhost/api/spelling/lists/list-1/assign', {
