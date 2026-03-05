@@ -1,104 +1,72 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-var mockGetSession: ReturnType<typeof vi.fn>;
-var mockCreateClient: ReturnType<typeof vi.fn>;
-var mockGetKid: ReturnType<typeof vi.fn>;
-var mockGetWordsForList: ReturnType<typeof vi.fn>;
-var mockSessionRunnerCtor: ReturnType<typeof vi.fn>;
-var mockRunnerStart: ReturnType<typeof vi.fn>;
-var mockRunnerGetState: ReturnType<typeof vi.fn>;
-var mockGetMaxWordLevel: ReturnType<typeof vi.fn>;
-var mockBuildPromptData: ReturnType<typeof vi.fn>;
-var mockSaveSessionRunnerState: ReturnType<typeof vi.fn>;
-var mockHeaders: ReturnType<typeof vi.fn>;
+vi.mock('@/lib/auth', () => ({
+  auth: {
+    api: {
+      getSession: vi.fn(),
+    },
+  },
+}));
 
-vi.mock('@/lib/auth', () => {
-  mockGetSession = vi.fn();
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn(),
+}));
+
+vi.mock('@/lib/spelling/db/kids', () => ({
+  getKid: vi.fn(),
+}));
+
+vi.mock('@/lib/spelling/db/custom-lists-db', () => ({
+  getWordsForList: vi.fn(),
+}));
+
+const mockRunnerStart = vi.fn();
+const mockRunnerGetState = vi.fn();
+vi.mock('@/lib/spelling/session/session-runner', () => {
   return {
-    auth: {
-      api: {
-        getSession: mockGetSession,
-      },
+    SessionRunner: class {
+      start = mockRunnerStart;
+      getState = mockRunnerGetState;
     },
   };
 });
 
-vi.mock('@supabase/supabase-js', () => {
-  mockCreateClient = vi.fn();
-  return {
-    createClient: mockCreateClient,
-  };
-});
+vi.mock('@/lib/spelling/db/words', () => ({
+  getMaxWordLevel: vi.fn(),
+  getWordsByIds: vi.fn(),
+}));
 
-vi.mock('@/lib/spelling/db/kids', () => {
-  mockGetKid = vi.fn();
-  return {
-    getKid: mockGetKid,
-  };
-});
+vi.mock('@/lib/spelling/session/prompt', () => ({
+  buildPromptData: vi.fn(),
+}));
 
-vi.mock('@/lib/spelling/db/custom-lists-db', () => {
-  mockGetWordsForList = vi.fn();
-  return {
-    getWordsForList: mockGetWordsForList,
-  };
-});
+vi.mock('@/lib/spelling/db/session-runners', () => ({
+  saveSessionRunnerState: vi.fn(),
+}));
 
-vi.mock('@/lib/spelling/session/session-runner', () => {
-  mockSessionRunnerCtor = vi.fn();
-  mockRunnerStart = vi.fn();
-  mockRunnerGetState = vi.fn();
-
-  class MockSessionRunner {
-    constructor() {
-      mockSessionRunnerCtor();
-    }
-
-    start(...args: unknown[]) {
-      return mockRunnerStart(...args);
-    }
-
-    getState(...args: unknown[]) {
-      return mockRunnerGetState(...args);
-    }
-  }
-
-  return {
-    SessionRunner: MockSessionRunner,
-  };
-});
-
-vi.mock('@/lib/spelling/db/words', () => {
-  mockGetMaxWordLevel = vi.fn();
-  return {
-    getMaxWordLevel: mockGetMaxWordLevel,
-    getWordsByIds: vi.fn(),
-  };
-});
-
-vi.mock('@/lib/spelling/session/prompt', () => {
-  mockBuildPromptData = vi.fn();
-  return {
-    buildPromptData: mockBuildPromptData,
-  };
-});
-
-vi.mock('@/lib/spelling/db/session-runners', () => {
-  mockSaveSessionRunnerState = vi.fn();
-  return {
-    saveSessionRunnerState: mockSaveSessionRunnerState,
-  };
-});
-
-vi.mock('next/headers', () => {
-  mockHeaders = vi.fn();
-  return {
-    headers: mockHeaders,
-  };
-});
+vi.mock('next/headers', () => ({
+  headers: vi.fn(),
+}));
 
 import { POST } from '@/app/api/spelling/session/start/route';
+import { auth } from '@/lib/auth';
+import { createClient } from '@supabase/supabase-js';
+import { getKid } from '@/lib/spelling/db/kids';
+import { getWordsForList } from '@/lib/spelling/db/custom-lists-db';
+import { getMaxWordLevel } from '@/lib/spelling/db/words';
+import { buildPromptData } from '@/lib/spelling/session/prompt';
+import { saveSessionRunnerState } from '@/lib/spelling/db/session-runners';
+import { headers } from 'next/headers';
+
+const mockGetSession = auth.api.getSession as unknown as ReturnType<typeof vi.fn>;
+const mockCreateClient = createClient as ReturnType<typeof vi.fn>;
+const mockGetKid = getKid as ReturnType<typeof vi.fn>;
+const mockGetWordsForList = getWordsForList as ReturnType<typeof vi.fn>;
+const mockGetMaxWordLevel = getMaxWordLevel as ReturnType<typeof vi.fn>;
+const mockBuildPromptData = buildPromptData as ReturnType<typeof vi.fn>;
+const mockSaveSessionRunnerState = saveSessionRunnerState as ReturnType<typeof vi.fn>;
+const mockHeaders = headers as ReturnType<typeof vi.fn>;
 
 type ListQueryResult = {
   data: { id: string; owner_user_id: string } | null;
@@ -113,8 +81,8 @@ function makeRequest(payload: Record<string, unknown>) {
 }
 
 function setupSupabaseListQuery(result: ListQueryResult) {
-  const single = vi.fn().mockResolvedValue(result);
-  const eq = vi.fn(() => ({ single }));
+  const maybeSingle = vi.fn().mockResolvedValue(result);
+  const eq = vi.fn(() => ({ maybeSingle }));
   const select = vi.fn(() => ({ eq }));
   const from = vi.fn(() => ({ select }));
 
@@ -155,21 +123,21 @@ describe('POST /api/spelling/session/start listId validation', () => {
     mockSaveSessionRunnerState.mockResolvedValue(undefined);
   });
 
-  it('returns 404 when list lookup .single() returns error', async () => {
+  it('returns 500 when list lookup returns a query error', async () => {
     const { select } = setupSupabaseListQuery({
       data: null,
-      error: { message: 'query failed' },
+      error: { code: 'PGRST000', message: 'query failed' },
     });
 
     const response = await POST(makeRequest({ kidId: 'kid-1', listId: 'list-1' }));
 
-    expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ error: 'List not found' });
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: 'Database error while loading list' });
     expect(select).toHaveBeenCalledWith('id, owner_user_id');
     expect(mockGetWordsForList).not.toHaveBeenCalled();
   });
 
-  it('returns 404 when list lookup .single() returns null data', async () => {
+  it('returns 404 when list lookup returns null data', async () => {
     const { select } = setupSupabaseListQuery({ data: null, error: null });
 
     const response = await POST(makeRequest({ kidId: 'kid-1', listId: 'list-1' }));

@@ -59,12 +59,18 @@ export async function POST(request: NextRequest) {
         .from('spelling_custom_lists')
         .select('id, owner_user_id')
         .eq('id', listId)
-        .single();
+        .maybeSingle();
 
-      if (listError || !list) {
+      if (listError) {
+        console.error('[Session Start] List query error:', { listId, code: listError.code, message: listError.message });
+        return NextResponse.json({ error: 'Database error while loading list' }, { status: 500 });
+      }
+      if (!list) {
+        console.warn('[Session Start] List not found:', { listId });
         return NextResponse.json({ error: 'List not found' }, { status: 404 });
       }
       if (list.owner_user_id !== session.user.id) {
+        console.warn('[Session Start] List ownership mismatch:', { listId, listOwner: list.owner_user_id, sessionUser: session.user.id });
         return NextResponse.json({ error: 'List not found' }, { status: 404 });
       }
 

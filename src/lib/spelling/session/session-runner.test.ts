@@ -41,6 +41,9 @@ vi.mock('../db/words', () => ({
   getWord: vi.fn().mockImplementation((id: string) => {
     return Promise.resolve(mockWords.find(w => w.id === id) ?? null);
   }),
+  getWordResolvingCustomList: vi.fn().mockImplementation((id: string) => {
+    return Promise.resolve(mockWords.find(w => w.id === id) ?? null);
+  }),
   updateWordElo: vi.fn().mockResolvedValue(undefined),
 }));
 
