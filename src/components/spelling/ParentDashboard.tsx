@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { SpellingErrorBoundary } from './SpellingErrorBoundary';
 import { ParentDashboardErrorFallback } from './ParentDashboardErrorFallback';
@@ -23,11 +23,7 @@ function ParentDashboardContent({ parentUserId }: ParentDashboardProps) {
   const [stats, setStats] = useState<KidStats[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadStats();
-  }, [parentUserId]);
-
-  async function loadStats() {
+  const loadStats = useCallback(async () => {
     const supabase = createClient();
 
     const { data: kids } = await supabase
@@ -142,7 +138,13 @@ function ParentDashboardContent({ parentUserId }: ParentDashboardProps) {
 
     setStats(results);
     setLoading(false);
-  }
+  }, [parentUserId]);
+
+  /* eslint-disable react-hooks/set-state-in-effect -- data fetch sets state on mount */
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (loading) {
     return <div>Loading...</div>;

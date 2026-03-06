@@ -18,6 +18,7 @@ import AiVoiceIndicator from './AiVoiceIndicator';
 
 function useTouchDevice() {
   const [isTouch, setIsTouch] = useState(false);
+  /* eslint-disable react-hooks/set-state-in-effect -- syncing with external media query */
   useEffect(() => {
     const mq = window.matchMedia('(pointer: coarse)');
     setIsTouch(mq.matches);
@@ -25,6 +26,7 @@ function useTouchDevice() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
   return isTouch;
 }
 
@@ -565,7 +567,7 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
 
   const announcement = useMemo(
     () => buildSpellingBeeAnnouncement(word),
-    [word.definition, word.example_sentence, word.word, inputMode]
+    [word]
   );
 
   const playWord = useCallback(async () => {
@@ -676,7 +678,7 @@ function useSpellPromptAudio(word: Word, promptId: string, inputMode: InputMode,
       setIsLoading(false);
       setPlayingState(false);
     }
-  }, [announcement, setHasPlayedState, setPlayingState, word]);
+  }, [announcement, isNoAudio, setHasPlayedState, setPlayingState, word]);
 
   const playWordRef = useRef(playWord);
 
@@ -748,6 +750,7 @@ function useSpellPromptSubmission({
     setIsSubmitting(value);
   }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- reset state on word change */
   useEffect(() => {
     const currentWordId = word.id;
     const isNewWord = currentWordId !== prevWordIdRef.current;
@@ -764,6 +767,7 @@ function useSpellPromptSubmission({
     promptIdRef.current = prompt?.prompt_id ?? word.id;
     prevWordIdRef.current = currentWordId;
   }, [prompt?.prompt_id, setSubmittingState, word.id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSubmit = useCallback(async () => {
     if (submitLockRef.current) return;

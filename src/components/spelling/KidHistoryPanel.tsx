@@ -360,7 +360,6 @@ export function shouldIncludeInSmartReview(attempts: boolean[]) {
   return false;
 }
 
-// eslint-disable-next-line max-lines-per-function -- Complex UI component with state management
 export default function KidHistoryPanel({ kidId }: KidHistoryPanelProps) {
   const router = useRouter();
   const [stats, setStats] = useState<WordStats[]>([]);
@@ -375,18 +374,23 @@ export default function KidHistoryPanel({ kidId }: KidHistoryPanelProps) {
   >({});
   const mistakeRequestControllers = useRef(new Map<string, AbortController>());
 
+  // Reset state when kidId changes — intentional prop-change reset pattern
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    mistakeRequestControllers.current.forEach(controller => controller.abort());
-    mistakeRequestControllers.current.clear();
+    const controllers = mistakeRequestControllers.current;
+    controllers.forEach(controller => controller.abort());
+    controllers.clear();
     setSelectedWordIds(new Set());
     setExpandedWordIds([]);
     setMistakeStatsByWordId({});
   }, [kidId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
+    const controllers = mistakeRequestControllers.current;
     return () => {
-      mistakeRequestControllers.current.forEach(controller => controller.abort());
-      mistakeRequestControllers.current.clear();
+      controllers.forEach(controller => controller.abort());
+      controllers.clear();
     };
   }, []);
 

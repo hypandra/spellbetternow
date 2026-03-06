@@ -1,8 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import * as React from 'react';
 import type { ReactNode } from 'react';
 
+vi.mock('react', async () => {
+  const actual = await vi.importActual<typeof import('react')>('react');
+  return {
+    ...actual,
+    useMemo: vi.fn((factory: () => unknown) => factory()),
+    useState: vi.fn(),
+  };
+});
+
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(() => ({ push: vi.fn() })),
+}));
+
 import SpellingListAssignmentPanel from './SpellingListAssignmentPanel';
+import { useMemo, useState } from 'react';
+
+const mockUseMemo = useMemo as unknown as ReturnType<typeof vi.fn>;
+const mockUseState = useState as unknown as ReturnType<typeof vi.fn>;
 
 type Learner = {
   id: string;
@@ -87,10 +103,10 @@ function renderPanel({
   const setPending = vi.fn();
   const setError = vi.fn();
 
-  vi.spyOn(React, 'useMemo').mockImplementation((factory: () => unknown) => factory());
+  mockUseMemo.mockImplementation((factory: () => unknown) => factory());
 
   let useStateCalls = 0;
-  vi.spyOn(React, 'useState').mockImplementation((initial: unknown) => {
+  mockUseState.mockImplementation((initial: unknown) => {
     useStateCalls += 1;
     if (useStateCalls === 1) {
       currentState = initial as Record<string, AssignmentState>;
@@ -116,7 +132,6 @@ describe('SpellingListAssignmentPanel', () => {
   const fetchMock = vi.fn();
 
   beforeEach(() => {
-    vi.restoreAllMocks();
     vi.clearAllMocks();
     (globalThis as { fetch?: typeof fetch }).fetch = fetchMock as unknown as typeof fetch;
     fetchMock.mockResolvedValue({
